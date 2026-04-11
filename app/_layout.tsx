@@ -6,7 +6,7 @@ import { PortalHost } from '@rn-primitives/portal';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
-
+import { AuthProvider } from '@/src/contexts/AuthContext';
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
@@ -20,6 +20,13 @@ export default function RootLayout() {
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <Stack />
       <PortalHost />
+      <AuthProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          {/* Đảm bảo thư mục (auth) không bị hiện thanh tiêu đề */}
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        </Stack>
+        <PortalHost />
+      </AuthProvider>
     </ThemeProvider>
   );
 }
