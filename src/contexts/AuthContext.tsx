@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
-      await SecureStore.deleteItemAsync('userToken');
+     
       setUser(null);
     } catch (error) {
       console.error('Lỗi khi đăng xuất:', error);

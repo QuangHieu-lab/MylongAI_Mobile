@@ -1,7 +1,13 @@
 import { Tabs } from 'expo-router';
-import { Home, Camera, Settings, BrainCircuit } from 'lucide-react-native';
+import { Home, Camera, Settings, BrainCircuit, User } from 'lucide-react-native';
+// 1. Thêm 2 thư viện này để xử lý Safe Area và nhận diện HĐH
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Platform } from 'react-native';
 
 export default function DashboardLayout() {
+  // 2. Lấy thông số vùng an toàn của máy người dùng đang chạy app
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs 
       screenOptions={{ 
@@ -9,8 +15,10 @@ export default function DashboardLayout() {
         tabBarActiveTintColor: '#9333ea', // Màu khi tab được chọn (Màu tím)
         tabBarInactiveTintColor: '#64748b', // Màu khi tab không được chọn (Xám)
         tabBarStyle: {
-          height: 65,
-          paddingBottom: 10,
+          // 3. CẬP NHẬT CHIỀU CAO & PADDING ĐỘNG TẠI ĐÂY
+          height: 65 + insets.bottom, 
+          // Nếu là Android thì cộng thêm 1 khoảng đệm nhỏ cho đẹp, iOS thì dùng luôn insets.bottom (do iOS tự có khoảng trống đẹp rồi)
+          paddingBottom: Platform.OS === 'android' ? insets.bottom + 8 : Math.max(insets.bottom, 10),
           paddingTop: 10,
           borderTopWidth: 1,
           borderTopColor: '#e2e8f0',
@@ -47,6 +55,8 @@ export default function DashboardLayout() {
           tabBarIcon: ({ color }) => <BrainCircuit size={24} color={color} />
         }} 
       />
+      
+      {/* MÀN HÌNH ẨN: Quét Realtime */}
       <Tabs.Screen 
         name="realtime-scan" 
         options={{ 
@@ -56,6 +66,14 @@ export default function DashboardLayout() {
         }} 
       />
       
+      {/* Tab 4: Cá nhân */}
+      <Tabs.Screen 
+        name="profile" 
+        options={{ 
+          title: 'Cá nhân',
+          tabBarIcon: ({ color }) => <User size={24} color={color} />,
+        }} 
+      />
     </Tabs>
   );
 }
