@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Home, Camera, Settings, BrainCircuit, User } from 'lucide-react-native';
+import { Home, Camera, Settings, BrainCircuit,CloudSun ,User } from 'lucide-react-native';
 // 1. Thêm 2 thư viện này để xử lý Safe Area và nhận diện HĐH
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Platform } from 'react-native';
@@ -46,7 +46,10 @@ export default function DashboardLayout() {
           tabBarIcon: ({ color }) => <Camera size={24} color={color} />
         }} 
       />
-
+<Tabs.Screen 
+        name="weather" 
+        options={{ title: 'Thời tiết', tabBarIcon: ({ color }) => <CloudSun color={color} size={24} /> }} 
+      />
       {/* Tab 3: Nhận diện AI (YOLO) */}
       <Tabs.Screen 
         name="ai-detect" 
