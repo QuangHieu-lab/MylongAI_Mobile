@@ -9,7 +9,7 @@ import { PortalHost } from '@rn-primitives/portal';
 
 // Import AuthProvider và Hook
 import { AuthProvider, useAuth } from '@/src/contexts/AuthContext';
-
+import { WeatherProvider } from '../src/contexts/WeatherContext'; // Import Provider
 export { ErrorBoundary } from 'expo-router';
 
 // Component con này dùng để truy cập useAuth() (vì nó phải nằm TRONG AuthProvider)
@@ -51,8 +51,10 @@ export default function RootLayout() {
     <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <AuthProvider>
+        <WeatherProvider>
         <RootLayoutNav />
         <PortalHost />
+        </WeatherProvider>
       </AuthProvider>
     </ThemeProvider>
   );
