@@ -5,7 +5,7 @@ import { INITIAL_SIMULATION_STATE } from '../constants/demo';
 export const useSimulation = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [simulation, setSimulation] = useState<SimulationState>(INITIAL_SIMULATION_STATE);
-
+  
   useEffect(() => {
     if (!isRunning) return;
 
