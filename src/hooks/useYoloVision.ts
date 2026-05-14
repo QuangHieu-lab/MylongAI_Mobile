@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-import { Alert } from 'react-native';
 import { aiService } from '@/src/services/ai'; 
+import { toast } from '@/src/lib/toast'; // 👈 Import thư viện Toast siêu mượt của bạn
 
 // ==============================
-// TỪ ĐIỂN DỊCH ID SANG CHỮ (Quy tắc 3)
+// TỪ ĐIỂN DỊCH ID SANG CHỮ
 // ==============================
 const CLASS_NAMES: Record<number, string> = {
   0: "Bánh tráng mè đen",
@@ -13,48 +13,19 @@ const CLASS_NAMES: Record<number, string> = {
 };
 
 export const useYoloVision = () => {
-  // 1. STATE ĐIỀU HƯỚNG TAB
   const [activeTab, setActiveTab] = useState<'realtime' | 'upload'>('upload');
-  
-  // 2. STATE CHO TÍNH NĂNG CAMERA REALTIME
   const [isCameraActive, setIsCameraActive] = useState(false);
-  const [isScanning, setIsScanning] = useState(false); 
-
-  // 3. STATE CHO TÍNH NĂNG TẢI ẢNH TĨNH
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   
-  // 4. STATE LƯU KẾT QUẢ CHUNG
+  const [isAnalyzing, setIsAnalyzing] = useState(false); 
   const [scanResult, setScanResult] = useState<any>(null); 
-
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // ==============================
-  // DỌN DẸP BỘ NHỚ (Chống Crash App)
-  // ==============================
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
 
   // ==============================
   // ĐIỀU KHIỂN NÚT BẬT/TẮT CAMERA
   // ==============================
   const toggleCamera = () => {
-    const newState = !isCameraActive;
-    setIsCameraActive(newState);
-    
-    if (newState) {
-      // Khi vừa bật, giả lập chờ 1.5s để Camera khởi động xong rồi mới báo "Đang quét"
-      timerRef.current = setTimeout(() => setIsScanning(true), 1500);
-      setScanResult(null); // Xóa kết quả cũ trên màn hình
-    } else {
-      // Khi tắt
-      setIsScanning(false);
-      setScanResult(null);
-      if (timerRef.current) clearTimeout(timerRef.current);
-    }
+    setIsCameraActive(!isCameraActive);
+    setScanResult(null); 
   };
 
   // ==============================
@@ -64,7 +35,8 @@ export const useYoloVision = () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert("Từ chối quyền", "Ứng dụng cần quyền truy cập ảnh để kiểm định mẻ bánh!");
+        // 🚀 Đổi Alert thành Toast Error
+        toast.error("Từ chối quyền", "Ứng dụng cần quyền truy cập thư viện ảnh!");
         return;
       }
 
@@ -72,7 +44,7 @@ export const useYoloVision = () => {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.8, // Giữ dung lượng ảnh nhỏ hơn 2MB (Quy tắc 1 của Backend)
+        quality: 0.8,
       });
 
       if (!result.canceled) {
@@ -80,12 +52,13 @@ export const useYoloVision = () => {
         setScanResult(null);
       }
     } catch (error) {
-      Alert.alert("Lỗi", "Không thể mở thư viện ảnh lúc này.");
+      // 🚀 Đổi Alert thành Toast Error
+      toast.error("Lỗi thư viện", "Không thể mở thư viện ảnh lúc này.");
     }
   };
 
   // ==============================
-  // [API] HÀM QUÉT ẢNH TĨNH (Upload)
+  // [API] HÀM QUÉT ẢNH UPLOAD
   // ==============================
   const handleAnalyzeImage = async () => {
     if (!selectedImage) return;
@@ -94,30 +67,41 @@ export const useYoloVision = () => {
       setIsAnalyzing(true);
       setScanResult(null);
       
-      // Bắn file ảnh lên cổng /ai/detect (FormData)
       const response = await aiService.detectRicePaper(selectedImage);
+      processAiResponse(response); 
       
-      processAiResponse(response); // Đưa cục JSON vào hàm xử lý chung
+      // 🚀 Thêm thông báo thành công cho mượt
+      toast.success("Thành công", "Đã phân tích xong ảnh mẻ bánh!");
 
     } catch (error: any) {
       console.error("Lỗi API Tải ảnh:", error);
-      Alert.alert("Mất kết nối", "Không thể gửi ảnh đến Máy chủ AI. Hãy kiểm tra lại IP/WiFi.");
+      // 🚀 Đổi Alert thành Toast Error
+      toast.error("Mất kết nối", "Không thể gửi ảnh đến Máy chủ AI.");
     } finally {
       setIsAnalyzing(false); 
     }
   };
 
   // ==============================
-  // [API] HÀM QUÉT TRỰC TIẾP (Realtime)
+  // [API] HÀM CHỤP & QUÉT THỦ CÔNG
   // ==============================
-  const handleRealtimeScan = async (base64String: string) => {
+  const handleManualCapture = async (base64String: string) => {
     try {
-      // Bắn chuỗi Base64 lên cổng /ai/detect-realtime (JSON)
+      setIsAnalyzing(true);
+      setScanResult(null);  
+
       const response = await aiService.detectRealtime(base64String);
-      processAiResponse(response); // Đưa cục JSON vào hàm xử lý chung
+      processAiResponse(response);
+
+      // 🚀 Thêm thông báo thành công
+      toast.success("Hoàn tất", "Đã quét và phân tích xong khung hình!");
+
     } catch (error) {
-      console.error("Lỗi API Realtime:", error);
-      // Realtime thường chạy ngầm liên tục nên ta KHÔNG dùng Alert.alert để tránh spam màn hình
+      console.error("Lỗi API Camera thủ công:", error);
+      // 🚀 Đổi Alert thành Toast Error
+      toast.error("Lỗi phân tích", "Không thể phân tích ảnh chụp. Vui lòng thử lại.");
+    } finally {
+      setIsAnalyzing(false); 
     }
   };
 
@@ -126,25 +110,25 @@ export const useYoloVision = () => {
   // ==============================
   const processAiResponse = (response: any) => {
     if (response && response.objects && response.objects.length > 0) {
-      const detectedObj = response.objects[0]; // Chỉ lấy bánh tráng rõ nét nhất
+      const detectedObj = response.objects[0]; 
       
-      // Dịch ID số (0, 1) thành Chữ. Nếu gặp số lạ thì in ra kèm ID để dễ sửa lỗi
       const translatedName = CLASS_NAMES[detectedObj.class] || `Nhãn lạ (ID: ${detectedObj.class})`;
 
       setScanResult({
         status: 'success',
         quality: translatedName, 
-        confidence: `${(detectedObj.confidence * 100).toFixed(1)}%`, // Đổi 0.985 thành 98.5%
-        dryness: 'N/A' // Tính năng độ ẩm chưa có trên Backend
+        confidence: `${(detectedObj.confidence * 100).toFixed(1)}%`, 
+        dryness: 'N/A' 
       });
     } else {
-      // Rơi vào đây nếu gửi ảnh lên mà AI nói "Trong ảnh không có cái bánh nào cả"
       setScanResult({
         status: 'empty',
         quality: 'Khung hình trống',
         confidence: '0%',
         dryness: 'N/A'
       });
+      // 🚀 Báo info cho user biết là AI không thấy gì
+      toast.info("Không tìm thấy", "Không phát hiện thấy bánh tráng trong ảnh.");
     }
   };
 
@@ -157,12 +141,15 @@ export const useYoloVision = () => {
   };
 
   return {
-    // Trả ra State
     activeTab, setActiveTab,
-    isCameraActive, isScanning, 
-    selectedImage, isAnalyzing, scanResult,
-    
-    // Trả ra Action
-    toggleCamera, handlePickImage, handleAnalyzeImage, handleRealtimeScan, resetUpload
+    isCameraActive, 
+    selectedImage, 
+    isAnalyzing, 
+    scanResult,
+    toggleCamera, 
+    handlePickImage, 
+    handleAnalyzeImage, 
+    handleManualCapture, 
+    resetUpload
   };
 };

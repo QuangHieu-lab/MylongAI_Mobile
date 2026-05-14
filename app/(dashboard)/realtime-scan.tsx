@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
+import{SafeAreaView} from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Scan, Camera, Square } from 'lucide-react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -13,10 +14,26 @@ export default function RealtimeScanScreen() {
   const cameraRef = useRef<CameraView>(null);
 
   // 2. Lấy bộ xử lý AI từ Hook
-  const { scanResult, handleRealtimeScan } = useYoloVision();
+  const { scanResult } = useYoloVision();
 
   // 3. Trạng thái Bật/Tắt vòng lặp quét
   const [isAutoScanning, setIsAutoScanning] = useState(false);
+
+  // Handler để gửi ảnh quét lên server
+  const handleRealtimeScan = async (base64: string) => {
+    try {
+      // Gửi base64 ảnh đến server/API endpoint
+      const response = await fetch('/api/realtime-scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64 }),
+      });
+      // Xử lý response nếu cần
+      return await response.json();
+    } catch (error) {
+      console.error("Lỗi gửi dữ liệu quét:", error);
+    }
+  };
 
   // ==============================
   // VÒNG LẶP QUÉT 3.5 GIÂY (Quy tắc 2 của Backend)
