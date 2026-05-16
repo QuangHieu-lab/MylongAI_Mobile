@@ -1,59 +1,80 @@
 // app/index.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, Dimensions, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 import { useAuth } from '@/src/contexts/AuthContext';
-import { Sparkles, Eye, Shield, ArrowRight, BarChart3, Zap } from 'lucide-react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage'; //  Import AsyncStorage
+import { Sparkles, Eye, Shield, ArrowRight, BarChart3, Zap, Activity } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
 const { width, height } = Dimensions.get('window');
 
 export default function Index() {
   const { user, isLoading } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null); //  Thêm state kiểm tra lần đầu
+  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null); 
+  
+  // 🚀 Thêm state để điều khiển thời gian hiện Splash Screen
+  const [showSplash, setShowSplash] = useState(true); 
+  
   const scrollRef = useRef<ScrollView>(null);
   const router = useRouter(); 
 
-  // 1. KIỂM TRA LẦN ĐẦU MỞ APP
+  // 1. KIỂM TRA LẦN ĐẦU MỞ APP VÀ CHẠY SPLASH SCREEN
   useEffect(() => {
-    const checkOnboardingStatus = async () => {
+    const checkAppStatus = async () => {
       try {
+        // Ép Splash Screen hiện ít nhất 1.5 giây để tạo hiệu ứng thị giác (giống app Acorns)
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
         const value = await AsyncStorage.getItem('@viewedOnboarding');
         if (value !== null) {
-          // Đã từng xem rồi -> Không phải lần đầu
-          setIsFirstLaunch(false);
+          setIsFirstLaunch(false); // Đã xem
         } else {
-          // Chưa từng xem -> Là lần đầu
-          setIsFirstLaunch(true);
+          setIsFirstLaunch(true);  // Chưa xem (Lần đầu tải app)
         }
       } catch (err) {
-        setIsFirstLaunch(true); // Lỗi thì cứ cho xem mặc định
+        setIsFirstLaunch(true); 
+      } finally {
+        setShowSplash(false); // Chạy xong thì tắt Splash Screen
       }
     };
-    checkOnboardingStatus();
+    
+    checkAppStatus();
   }, []);
 
   // 2. HÀM XỬ LÝ KHI BẤM "BẮT ĐẦU GIÁM SÁT"
   const handleFinishOnboarding = async () => {
     try {
-      // Đánh dấu là đã xem Onboarding vào bộ nhớ
       await AsyncStorage.setItem('@viewedOnboarding', 'true');
     } catch (err) {
       console.log('Lỗi lưu trạng thái Onboarding', err);
     } finally {
-      // Chuyển sang trang Đăng nhập
       router.push('/(auth)/login');
     }
   };
 
+  // ==========================================
   // 3. TRẠM KIỂM SOÁT ĐIỀU HƯỚNG (ROUTE GUARDS)
+  // ==========================================
   
-  // - Đang tải dữ liệu Auth hoặc đang đọc AsyncStorage -> Hiện Loading
-  if (isLoading || isFirstLaunch === null) {
+  // 🚀 MÀN HÌNH SPLASH SCREEN (Thay thế cho ActivityIndicator)
+  if (showSplash || isLoading || isFirstLaunch === null) {
     return (
-      <View className="flex-1 justify-center items-center bg-[#0A0E27]">
-        <ActivityIndicator size="large" color="#38bdf8" />
+      <View className="flex-1 bg-[#0A0E27] items-center justify-center">
+        {/* Khung Logo phát sáng */}
+        <View className="w-24 h-24 rounded-3xl bg-sky-500 items-center justify-center shadow-[0_0_30px_rgba(56,189,248,0.5)] mb-6 border border-sky-400/30">
+          <Activity size={48} color="#0A0E27" strokeWidth={2.5} />
+        </View>
+        
+        {/* Tên App */}
+        <Text className="text-white text-4xl font-extrabold tracking-widest">
+          MYLONG<Text className="text-sky-500">AI</Text>
+        </Text>
+        
+        {/* Slogan nhỏ */}
+        <Text className="text-slate-500 text-xs tracking-[0.3em] uppercase mt-3 font-semibold">
+          BatchGuard System
+        </Text>
       </View>
     );
   }
@@ -68,7 +89,9 @@ export default function Index() {
     return <Redirect href="/(auth)/login" />;
   }
 
-  // Cấu hình nội dung 3 Slide đầu
+  // ==========================================
+  // 4. HIỂN THỊ GIAO DIỆN ONBOARDING (DÀNH CHO LẦN ĐẦU)
+  // ==========================================
   const slides = [
     {
       id: 1,
@@ -96,10 +119,9 @@ export default function Index() {
     setCurrentSlide(index);
   };
 
-  // 4. HIỂN THỊ GIAO DIỆN ONBOARDING CHO NGƯỜI MỚI
   return (
     <View className="flex-1 bg-[#0A0E27]">
-      {/* ... (Phần Header Logo giữ nguyên) ... */}
+      {/* Header Logo Onboarding */}
       <View className="absolute top-12 left-0 right-0 z-50 flex-row items-center justify-center gap-2">
         <View className="w-8 h-8 bg-sky-500 rounded-lg items-center justify-center">
           <BarChart3 size={18} color="#0A0E27" />
@@ -140,22 +162,21 @@ export default function Index() {
             </Text>
             
             <View className="w-full max-w-sm space-y-4">
-              {/* SỬA NÚT NÀY: Gọi hàm handleFinishOnboarding */}
               <TouchableOpacity 
                 onPress={handleFinishOnboarding} 
-                className="w-full bg-sky-500 py-4 rounded-2xl items-center shadow-lg shadow-sky-500/30"
+                className="w-full bg-sky-500 py-4 rounded-2xl items-center shadow-lg shadow-sky-500/30 mb-4"
               >
-                <Text className="text-navy-950 font-bold text-lg">
+                <Text className="text-[#0A0E27] font-bold text-lg">
                   Bắt đầu giám sát
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
                 onPress={handleFinishOnboarding} 
-                className="w-full bg-transparent border-2 border-slate-700 py-4 rounded-2xl items-center mt-4"
+                className="w-full bg-transparent border-2 border-slate-700 py-4 rounded-2xl items-center"
               >
                 <Text className="text-white font-bold text-lg">
-                  Tạo tài khoản mới
+                  Tôi đã có tài khoản
                 </Text>
               </TouchableOpacity>
             </View>
@@ -163,7 +184,7 @@ export default function Index() {
         </View>
       </ScrollView>
 
-      {/* THANH ĐIỀU HƯỚNG BÊN DƯỚI */}
+      {/* THANH ĐIỀU HƯỚNG BÊN DƯỚI (Dots & Nút Next) */}
       {currentSlide < 3 && (
         <View className="absolute bottom-12 left-0 right-0 items-center">
           <View className="flex-row items-center justify-between w-full px-10">

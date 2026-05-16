@@ -1,9 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import{SafeAreaView} from 'react-native-safe-area-context'
+import React, { useRef } from 'react';
+import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Scan, Camera, Square } from 'lucide-react-native';
+import { ArrowLeft, Scan, Camera } from 'lucide-react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+
+// Import Hook YOLO AI
 import { useYoloVision } from '@/src/hooks/useYoloVision';
 
 export default function RealtimeScanScreen() {
@@ -14,60 +16,29 @@ export default function RealtimeScanScreen() {
   const cameraRef = useRef<CameraView>(null);
 
   // 2. Lấy bộ xử lý AI từ Hook
-  const { scanResult } = useYoloVision();
-
-  // 3. Trạng thái Bật/Tắt vòng lặp quét
-  const [isAutoScanning, setIsAutoScanning] = useState(false);
-
-  // Handler để gửi ảnh quét lên server
-  const handleRealtimeScan = async (base64: string) => {
-    try {
-      // Gửi base64 ảnh đến server/API endpoint
-      const response = await fetch('/api/realtime-scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64 }),
-      });
-      // Xử lý response nếu cần
-      return await response.json();
-    } catch (error) {
-      console.error("Lỗi gửi dữ liệu quét:", error);
-    }
-  };
+  const { scanResult, isAnalyzing, handleManualCapture } = useYoloVision();
 
   // ==============================
-  // VÒNG LẶP QUÉT 3.5 GIÂY (Quy tắc 2 của Backend)
+  // 🚀 HÀM CHỤP VÀ GỬI ẢNH LÊN AI (THỦ CÔNG)
   // ==============================
-  const scanFrame = async () => {
-    if (!isAutoScanning || !cameraRef.current) return;
+  const takePhotoAndAnalyze = async () => {
+    // Chặn bấm spam khi AI đang xử lý
+    if (isAnalyzing || !cameraRef.current) return;
 
     try {
-      // Chụp nháy 1 tấm ảnh với chất lượng nén thấp nhất để gửi siêu tốc
       const photo = await cameraRef.current.takePictureAsync({
         base64: true,
-        quality: 0.1, 
+        quality: 0.2, // Giảm chất lượng ảnh để Base64 nhẹ đi
       });
 
       if (photo?.base64) {
-        // Gửi chuỗi Base64 lên cổng Realtime
-        await handleRealtimeScan(photo.base64);
+        // Gửi chuỗi Base64 thẳng vào Hook để gọi API
+        await handleManualCapture(photo.base64);
       }
     } catch (error) {
-      console.error("Lỗi khi quét Realtime:", error);
-    } finally {
-      // Đợi 3.5 giây rồi mới chụp tấm tiếp theo (Tránh lỗi 429 Too many requests)
-      if (isAutoScanning) {
-        setTimeout(scanFrame, 3500);
-      }
+      console.error("Lỗi khi chụp ảnh AI:", error);
     }
   };
-
-  // Kích hoạt vòng lặp mỗi khi Quản đốc bấm nút Bật/Tắt
-  useEffect(() => {
-    if (isAutoScanning) {
-      scanFrame();
-    }
-  }, [isAutoScanning]);
 
   // ==============================
   // GIAO DIỆN XIN QUYỀN CAMERA
@@ -87,83 +58,87 @@ export default function RealtimeScanScreen() {
   }
 
   // ==============================
-  // GIAO DIỆN CAMERA CHÍNH
+  // GIAO DIỆN CAMERA CHÍNH (ĐÃ SỬA LỖI CẤU TRÚC)
   // ==============================
   return (
-    <View className="flex-1 bg-black">
-      {/* Ống kính Camera bao phủ toàn màn hình */}
+    <View className="flex-1 bg-black relative">
+      
+      {/* 1. LỚP BACKGROUND: Ống kính Camera nằm dưới cùng */}
       <CameraView 
         ref={cameraRef}
-        style={{ flex: 1 }} 
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} 
         facing="back"
-      >
-        <SafeAreaView className="flex-1 justify-between">
-          
-          {/* Header với nút Back */}
-          <View className="flex-row items-center justify-between p-4 z-50">
-            <TouchableOpacity 
-              onPress={() => router.back()} 
-              className="w-10 h-10 bg-black/50 rounded-full items-center justify-center border border-slate-600"
-            >
-              <ArrowLeft size={20} color="#cbd5e1" />
-            </TouchableOpacity>
-            <Text className="text-white font-bold text-lg drop-shadow-md">Quét AI Trực tiếp</Text>
-            <View className="w-10" /> 
+      />
+
+      {/* 2. LỚP OVERLAY: Giao diện nổi lên trên Camera */}
+      {/* Dùng pointerEvents="box-none" để các vùng trống không cản thao tác chạm vào camera (nếu cần focus) */}
+      <SafeAreaView className="flex-1 justify-between" pointerEvents="box-none">
+        
+        {/* Header với nút Back */}
+        <View className="flex-row items-center justify-between p-4 z-50">
+          <TouchableOpacity 
+            onPress={() => router.back()} 
+            className="w-10 h-10 bg-black/50 rounded-full items-center justify-center border border-slate-600"
+          >
+            <ArrowLeft size={20} color="#cbd5e1" />
+          </TouchableOpacity>
+          <Text className="text-white font-bold text-lg drop-shadow-md">YOLO Vision AI</Text>
+          <View className="w-10" /> 
+        </View>
+
+        {/* Khung Ngắm Trực Diện */}
+        <View className="flex-1 justify-center items-center relative" pointerEvents="none">
+          <View className={`w-72 h-72 border-2 border-dashed rounded-3xl items-center justify-center relative ${
+            isAnalyzing ? 'border-sky-400 bg-sky-400/10' : 'border-emerald-400 bg-emerald-400/10'
+          }`}>
+            
+            {/* 4 Góc ngắm */}
+            <View className={`absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 rounded-tl-xl ${isAnalyzing ? 'border-sky-500' : 'border-emerald-500'}`} />
+            <View className={`absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 rounded-tr-xl ${isAnalyzing ? 'border-sky-500' : 'border-emerald-500'}`} />
+            <View className={`absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 rounded-bl-xl ${isAnalyzing ? 'border-sky-500' : 'border-emerald-500'}`} />
+            <View className={`absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 rounded-br-xl ${isAnalyzing ? 'border-sky-500' : 'border-emerald-500'}`} />
+            
+            <Scan size={48} color={isAnalyzing ? "#38bdf8" : "#34d399"} className={isAnalyzing ? "opacity-100" : "opacity-50"} />
+            <Text className={`mt-4 font-mono font-bold text-xs ${isAnalyzing ? 'text-sky-400' : 'text-emerald-400'}`}>
+              {isAnalyzing ? 'ĐANG XỬ LÝ KHUNG HÌNH...' : 'CĂN CHỈNH BÁNH VÀ BẤM CHỤP'}
+            </Text>
           </View>
 
-          {/* Khung Ngắm Trực Diện */}
-          <View className="flex-1 justify-center items-center">
-            <View className={`w-72 h-72 border-2 border-dashed rounded-3xl items-center justify-center relative ${
-              isAutoScanning ? 'border-emerald-400 bg-emerald-400/10' : 'border-slate-500 bg-slate-800/30'
+          {/* HIỂN THỊ KẾT QUẢ AI TRẢ VỀ TRÊN MÀN HÌNH */}
+          {!isAnalyzing && scanResult && (
+            <View className={`absolute bottom-10 px-6 py-3 rounded-full border shadow-lg ${
+              scanResult.status === 'success' ? 'bg-emerald-900/90 border-emerald-400 shadow-emerald-500/30' : 'bg-slate-900/90 border-slate-500'
             }`}>
-              
-              {/* 4 Góc ngắm */}
-              <View className={`absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 rounded-tl-xl ${isAutoScanning ? 'border-emerald-500' : 'border-slate-400'}`} />
-              <View className={`absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 rounded-tr-xl ${isAutoScanning ? 'border-emerald-500' : 'border-slate-400'}`} />
-              <View className={`absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 rounded-bl-xl ${isAutoScanning ? 'border-emerald-500' : 'border-slate-400'}`} />
-              <View className={`absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 rounded-br-xl ${isAutoScanning ? 'border-emerald-500' : 'border-slate-400'}`} />
-              
-              <Scan size={48} color={isAutoScanning ? "#34d399" : "#94a3b8"} className="opacity-50" />
-              <Text className={`mt-4 font-mono font-bold text-xs ${isAutoScanning ? 'text-emerald-400' : 'text-slate-400'}`}>
-                {isAutoScanning ? 'ĐANG QUÉT (3.5s/lần)...' : 'ĐÃ TẠM DỪNG'}
+              <Text className={`font-bold text-lg text-center ${scanResult.status === 'success' ? 'text-emerald-400' : 'text-slate-300'}`}>
+                {scanResult.quality}
               </Text>
-            </View>
-
-            {/* HIỂN THỊ KẾT QUẢ AI TRẢ VỀ TRÊN MÀN HÌNH */}
-            {isAutoScanning && scanResult && (
-              <View className={`absolute bottom-10 px-6 py-3 rounded-full border ${
-                scanResult.status === 'success' ? 'bg-emerald-900/80 border-emerald-400' : 'bg-slate-900/80 border-slate-500'
-              }`}>
-                <Text className={`font-bold text-lg text-center ${scanResult.status === 'success' ? 'text-emerald-400' : 'text-slate-300'}`}>
-                  {scanResult.quality}
+              {scanResult.status === 'success' && (
+                <Text className="text-white text-center text-xs mt-1">
+                  Độ tin cậy: {scanResult.confidence}
                 </Text>
-                {scanResult.status === 'success' && (
-                  <Text className="text-white text-center text-xs mt-1">
-                    Độ tin cậy: {scanResult.confidence}
-                  </Text>
-                )}
-              </View>
-            )}
-          </View>
-
-          {/* Nút Chụp/Quét dưới cùng */}
-          <View className="pb-10 pt-4 items-center">
-            <TouchableOpacity 
-              onPress={() => setIsAutoScanning(!isAutoScanning)}
-              className={`w-16 h-16 rounded-full items-center justify-center border-4 border-slate-800 shadow-xl ${
-                isAutoScanning ? 'bg-red-500' : 'bg-emerald-500'
-              }`}
-            >
-              {isAutoScanning ? (
-                <Square size={24} color="white" fill="white" /> // Nút Dừng màu Đỏ
-              ) : (
-                <Camera size={24} color="white" /> // Nút Bắt đầu màu Xanh
               )}
-            </TouchableOpacity>
-          </View>
+            </View>
+          )}
+        </View>
 
-        </SafeAreaView>
-      </CameraView>
+        {/* Nút Chụp/Quét dưới cùng */}
+        <View className="pb-10 pt-4 items-center">
+          <TouchableOpacity 
+            onPress={takePhotoAndAnalyze}
+            disabled={isAnalyzing} 
+            className={`w-20 h-20 rounded-full items-center justify-center border-4 shadow-xl ${
+              isAnalyzing ? 'bg-slate-700 border-slate-500' : 'bg-emerald-500 border-slate-800'
+            }`}
+          >
+            {isAnalyzing ? (
+              <ActivityIndicator color="white" size="large" />
+            ) : (
+              <Camera size={32} color="white" />
+            )}
+          </TouchableOpacity>
+        </View>
+
+      </SafeAreaView>
     </View>
   );
 }
