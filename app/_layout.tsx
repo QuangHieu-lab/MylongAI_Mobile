@@ -11,7 +11,7 @@ import { PortalHost } from '@rn-primitives/portal';
 // Import Contexts
 import { AuthProvider, useAuth } from '@/src/contexts/AuthContext';
 import { WeatherProvider } from '../src/contexts/WeatherContext';
-
+import { FarmProvider } from '@/src/contexts/FarmContext';
 // Import Toast & Icons
 import Toast, { ToastConfig } from 'react-native-toast-message';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react-native';
@@ -90,10 +90,12 @@ export default function RootLayout() {
     <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <AuthProvider>
+        <FarmProvider>
         <WeatherProvider>
           <RootLayoutNav />
           <PortalHost />
         </WeatherProvider>
+        </FarmProvider>
       </AuthProvider>
       
       {/* KHAI BÁO TOAST Ở DƯỚI CÙNG ĐỂ NÓ NỔI LÊN TRÊN MỌI MÀN HÌNH */}

@@ -42,13 +42,14 @@ export default function DashboardLayout() {
       <Tabs.Screen 
         name="camera" 
         options={{ 
+           href: null,
           title: 'Camera',
           tabBarIcon: ({ color }) => <Camera size={24} color={color} />
         }} 
       />
 <Tabs.Screen 
         name="weather" 
-        options={{ title: 'Thời tiết', tabBarIcon: ({ color }) => <CloudSun color={color} size={24} /> }} 
+        options={{ title: 'Thời tiết', href: null,tabBarIcon: ({ color }) => <CloudSun color={color} size={24} /> }} 
       />
       {/* Tab 3: Nhận diện AI (YOLO) */}
       <Tabs.Screen 
@@ -68,7 +69,8 @@ export default function DashboardLayout() {
           tabBarStyle: { display: 'none' } // Tắt luôn thanh menu dưới đáy khi đang mở Camera cho rộng
         }} 
       />
-      
+      <Tabs.Screen name="history" options={{ href: null, headerShown: false }
+    } />
       {/* Tab 4: Cá nhân */}
       <Tabs.Screen 
         name="profile" 

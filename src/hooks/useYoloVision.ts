@@ -1,11 +1,8 @@
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { aiService } from '@/src/services/ai'; 
-import { toast } from '@/src/lib/toast'; // 👈 Import thư viện Toast siêu mượt của bạn
+import { toast } from '@/src/lib/toast'; 
 
-// ==============================
-// TỪ ĐIỂN DỊCH ID SANG CHỮ
-// ==============================
 const CLASS_NAMES: Record<number, string> = {
   0: "Bánh tráng mè đen",
   1: "Bánh tráng sữa",
@@ -35,7 +32,6 @@ export const useYoloVision = () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        // 🚀 Đổi Alert thành Toast Error
         toast.error("Từ chối quyền", "Ứng dụng cần quyền truy cập thư viện ảnh!");
         return;
       }
@@ -45,6 +41,7 @@ export const useYoloVision = () => {
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
+        base64: true, // Thêm dòng này nếu API của bạn cần Base64 cho ảnh upload
       });
 
       if (!result.canceled) {
@@ -52,7 +49,6 @@ export const useYoloVision = () => {
         setScanResult(null);
       }
     } catch (error) {
-      // 🚀 Đổi Alert thành Toast Error
       toast.error("Lỗi thư viện", "Không thể mở thư viện ảnh lúc này.");
     }
   };
@@ -70,12 +66,9 @@ export const useYoloVision = () => {
       const response = await aiService.detectRicePaper(selectedImage);
       processAiResponse(response); 
       
-      // 🚀 Thêm thông báo thành công cho mượt
       toast.success("Thành công", "Đã phân tích xong ảnh mẻ bánh!");
-
     } catch (error: any) {
       console.error("Lỗi API Tải ảnh:", error);
-      // 🚀 Đổi Alert thành Toast Error
       toast.error("Mất kết nối", "Không thể gửi ảnh đến Máy chủ AI.");
     } finally {
       setIsAnalyzing(false); 
@@ -83,22 +76,23 @@ export const useYoloVision = () => {
   };
 
   // ==============================
-  // [API] HÀM CHỤP & QUÉT THỦ CÔNG
+  // 🚀 [API] HÀM CHỤP & QUÉT THỦ CÔNG (ĐÃ TỐI ƯU)
   // ==============================
   const handleManualCapture = async (base64String: string) => {
+    // Ngăn chặn bấm spam khi đang phân tích
+    if (isAnalyzing) return; 
+
     try {
       setIsAnalyzing(true);
       setScanResult(null);  
 
+      // Gửi Base64 lên server
       const response = await aiService.detectRealtime(base64String);
       processAiResponse(response);
 
-      // 🚀 Thêm thông báo thành công
       toast.success("Hoàn tất", "Đã quét và phân tích xong khung hình!");
-
     } catch (error) {
       console.error("Lỗi API Camera thủ công:", error);
-      // 🚀 Đổi Alert thành Toast Error
       toast.error("Lỗi phân tích", "Không thể phân tích ảnh chụp. Vui lòng thử lại.");
     } finally {
       setIsAnalyzing(false); 
@@ -111,7 +105,6 @@ export const useYoloVision = () => {
   const processAiResponse = (response: any) => {
     if (response && response.objects && response.objects.length > 0) {
       const detectedObj = response.objects[0]; 
-      
       const translatedName = CLASS_NAMES[detectedObj.class] || `Nhãn lạ (ID: ${detectedObj.class})`;
 
       setScanResult({
@@ -127,14 +120,10 @@ export const useYoloVision = () => {
         confidence: '0%',
         dryness: 'N/A'
       });
-      // 🚀 Báo info cho user biết là AI không thấy gì
-      toast.info("Không tìm thấy", "Không phát hiện thấy bánh tráng trong ảnh.");
+      toast.info("Không tìm thấy", "Không phát hiện thấy bánh tráng trong khung hình.");
     }
   };
 
-  // ==============================
-  // LÀM MỚI (CHỌN ẢNH KHÁC)
-  // ==============================
   const resetUpload = () => {
     setSelectedImage(null);
     setScanResult(null);
