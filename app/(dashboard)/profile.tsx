@@ -98,11 +98,11 @@ export default function ProfileScreen() {
         )}
 
         {/* Danh sách Menu */}
-        <View className="bg-[#1e293b] px-5 rounded-3xl border border-slate-700/50 mb-6">
+       {/* <View className="bg-[#1e293b] px-5 rounded-3xl border border-slate-700/50 mb-6">
           <MenuButton icon={Settings} title="Cài đặt hệ thống" />
           <MenuButton icon={Bell} title="Thông báo cảnh báo" />
           <MenuButton icon={CircleHelp} title="Hỗ trợ kỹ thuật" />
-        </View>
+        </View> }
 
         {/* Nút Đăng xuất */}
         <TouchableOpacity 
