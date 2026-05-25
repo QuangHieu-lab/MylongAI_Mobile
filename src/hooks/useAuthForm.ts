@@ -1,41 +1,37 @@
+// useAuthForm.ts
 import { useState } from 'react';
-import { Alert } from 'react-native';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { AUTH_MESSAGES } from '@/src/constants/messages';
-// import { authService } from '@/src/services/auth.service'; // Bỏ comment khi có service thật
-import { toast } from '@/src/lib/toast'; // 👈 Import tiện ích Toast
+import { toast } from '@/src/lib/toast';
 
 export const useAuthForm = () => {
-  const { login } = useAuth();
+  const { login, register } = useAuth(); // 👈 Lấy thẳng hàm register từ Context
   
-  // Trạng thái chung
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Trạng thái Form
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  
   const [registerName, setRegisterName] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
 
   const togglePassword = () => setShowPassword(prev => !prev);
 
-  // Xử lý Đăng nhập
   const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {
-      toast.error('Lỗi', AUTH_MESSAGES.ERR_MISSING_FIELDS); //  Gọi lỗi
+      toast.error('Lỗi', AUTH_MESSAGES.ERR_MISSING_FIELDS);
       return;
     }
     
     setIsLoading(true);
     try {
       await login(loginEmail, loginPassword);
-      toast.success('Thành công', AUTH_MESSAGES.SUCCESS_LOGIN); //  Gọi thành công
-    } catch (error) {
-      toast.error('Lỗi', AUTH_MESSAGES.ERR_LOGIN_FAIL);
+      toast.success('Thành công', AUTH_MESSAGES.SUCCESS_LOGIN); 
+    } catch (error: any) {
+      // 🚀 Lấy thông báo lỗi từ Context ném ra để hiển thị
+      toast.error('Lỗi đăng nhập', error.message || AUTH_MESSAGES.ERR_LOGIN_FAIL);
     } finally {
       setIsLoading(false);
     }
@@ -49,19 +45,20 @@ export const useAuthForm = () => {
 
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await register(registerName, registerEmail, registerPassword);
       toast.success('Thành công', AUTH_MESSAGES.SUCCESS_REGISTER);
       
+      setLoginEmail(registerEmail);
       setRegisterPassword('');
       setActiveTab('login');
-    } catch (error) {
-      toast.error('Lỗi', 'Đăng ký thất bại. Vui lòng thử lại.');
+    } catch (error: any) {
+      // 🚀 Lấy thông báo lỗi trùng email từ Context
+      toast.error('Lỗi đăng ký', error.message || 'Đăng ký thất bại. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Trả về những gì UI cần
   return {
     activeTab, setActiveTab,
     isLoading,

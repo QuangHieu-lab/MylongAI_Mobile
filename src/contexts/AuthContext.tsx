@@ -3,27 +3,30 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
 
 import { User, AuthContextType } from '../types/auth';
-// Tạm thời comment service thật lại vì chưa có Backend
 // import { authService } from '../services/authService'; 
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // ==========================================
-// 🚀 MOCK DATA: TÀI KHOẢN GIẢ LẬP (VÌ CHƯA CÓ BACKEND)
+// 🚀 MOCK DATABASE TẬP TRUNG TẠI CONTEXT
 // ==========================================
-const MOCK_ADMIN: User = {
-  id: 'admin_999',
-  name: 'Đại Ca Quản Đốc',
-  email: 'admin@mylongai.com',
-  role: 'admin', 
-};
-
-const MOCK_USER: User = {
-  id: 'user_001',
-  name: 'Nhân Viên Phơi Bánh',
-  email: 'nhanvien@mylongai.com',
-  role: 'user', 
-};
+// Mảng này đóng vai trò như Database. Chứa cả pass để kiểm tra.
+export const MOCK_USERS_DB = [
+  { 
+    id: 'admin_999', 
+    name: 'Đại Ca Quản Đốc', 
+    email: 'admin@mylongai.com', 
+    password: '123', // Thêm password để test
+    role: 'admin' as const 
+  },
+  { 
+    id: 'user_001', 
+    name: 'Nhân Viên Phơi Bánh', 
+    email: 'nhanvien@mylongai.com', 
+    password: '123', // Thêm password để test
+    role: 'user' as const 
+  }
+];
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -36,18 +39,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // 1. KIỂM TRA ĐĂNG NHẬP KHI MỞ APP
   const checkLoggedInUser = async () => {
     try {
-      const token = await SecureStore.getItemAsync('userToken');
-      if (token) {
-        // Kiểm tra xem token đang lưu là của Sếp hay Nhân viên
-        if (token === 'mock_admin_token') {
-          setUser(MOCK_ADMIN);
-        } else if (token === 'mock_user_token') {
-          setUser(MOCK_USER);
-        }
+      // Dùng luôn email làm mock token cho dễ tìm
+      const tokenEmail = await SecureStore.getItemAsync('userToken');
+      
+      if (tokenEmail) {
+        // Tìm user trong Mock DB dựa trên token (email)
+        const foundUser = MOCK_USERS_DB.find(u => u.email === tokenEmail);
         
-        // CODE THẬT SAU NÀY BẬT LÊN:
-        // const userData = await authService.getMe(token);
-        // setUser(userData);
+        if (foundUser) {
+          // Bỏ password ra trước khi set vào state để bảo mật (chuẩn thực tế)
+          const { password, ...userData } = foundUser;
+          setUser(userData);
+        } else {
+          // Nếu token là email lạ (bị xóa khỏi DB), xóa token đi
+          await SecureStore.deleteItemAsync('userToken');
+        }
       }
     } catch (e) {
       console.log('Lỗi kiểm tra token:', e);
@@ -57,44 +63,56 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // 2. XỬ LÝ ĐĂNG NHẬP (KHÔNG CẦN BACKEND)
+  // 2. XỬ LÝ ĐĂNG NHẬP (Làm Backend Ảo)
   const login = async (email: string, pass: string) => {
     try {
-      // Giả lập thời gian load mạng (800ms) để UI hiện vòng xoay cho chân thực
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise(resolve => setTimeout(resolve, 800)); // Giả lập mạng
 
-      // TRƯỜNG HỢP 1: NẾU GÕ 'admin' -> VÀO ADMIN
-      if (email.toLowerCase() === 'admin' || email.toLowerCase() === 'admin@mylongai.com') {
-        await SecureStore.setItemAsync('userToken', 'mock_admin_token');
-        setUser(MOCK_ADMIN);
-        return; 
+      // KIỂM TRA ĐĂNG NHẬP TỪ MOCK DB
+      const userExists = MOCK_USERS_DB.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+      if (!userExists) {
+        throw new Error('Tài khoản chưa được đăng ký!');
       }
 
-      // TRƯỜNG HỢP 2: GÕ BẤT KỲ CÁI GÌ KHÁC -> VÀO USER THƯỜNG
-      // Tự động lấy cái email bạn vừa gõ để hiển thị lên Profile cho giống thật
-      const dynamicUser = { ...MOCK_USER, email: email || 'nhanvien@mylongai.com' };
-      await SecureStore.setItemAsync('userToken', 'mock_user_token');
-      setUser(dynamicUser);
+      if (userExists.password !== pass) {
+        throw new Error('Mật khẩu không chính xác!');
+      }
+
+      // Đăng nhập thành công -> Lưu email làm Token
+      await SecureStore.setItemAsync('userToken', userExists.email);
       
-      // CODE THẬT SAU NÀY BẬT LÊN:
-      // const { token, user: userData } = await authService.login(email, pass);
-      // await SecureStore.setItemAsync('userToken', token);
-      // setUser(userData);
+      // Bỏ pass ra khỏi state
+      const { password, ...userData } = userExists;
+      setUser(userData);
 
     } catch (error) {
       console.error('Lỗi đăng nhập:', error);
-      throw error;
+      throw error; // Ném lỗi ra để useAuthForm bắt và hiện Toast
     }
   };
 
-  // 3. XỬ LÝ ĐĂNG KÝ (KHÔNG CẦN BACKEND)
+  // 3. XỬ LÝ ĐĂNG KÝ (Làm Backend Ảo)
   const register = async (name: string, email: string, pass: string) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 800)); // Giả lập mạng
+      await new Promise(resolve => setTimeout(resolve, 800)); 
+
+      // Kiểm tra trùng email
+      const isExist = MOCK_USERS_DB.some(u => u.email.toLowerCase() === email.toLowerCase());
+      if (isExist) {
+        throw new Error('Email này đã được sử dụng!');
+      }
+
+      // Lưu user mới vào DB ảo
+      MOCK_USERS_DB.push({
+        id: `user_${Date.now()}`,
+        name: name,
+        email: email,
+        password: pass,
+        role: 'user' // Mặc định đăng ký mới là user thường
+      });
+
       console.log("Mock đăng ký thành công cho:", email);
-      
-      // CODE THẬT SAU NÀY BẬT LÊN:
-      // await authService.register(name, email, pass);
     } catch (error) {
       console.error('Lỗi đăng ký:', error);
       throw error;

@@ -37,7 +37,14 @@ export default function AdminLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="users" />
-      
+      {/* Các trang Admin chúng ta vừa xây dựng */}
+  <Stack.Screen name="overview" />
+  <Stack.Screen name="revenue" />
+  <Stack.Screen name="batches" />
+  <Stack.Screen name="cameras" />
+  <Stack.Screen name="risks" />
+  <Stack.Screen name="analytics" />
+  <Stack.Screen name="settings" />
       {/* Sau này bạn tạo file nào trong thư mục (admin) thì khai báo thêm vào đây */}
       {/* <Stack.Screen name="farms" /> */}
       {/* <Stack.Screen name="batches" /> */}
