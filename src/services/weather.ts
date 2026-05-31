@@ -1,62 +1,66 @@
 import { CurrentWeather, WeatherData } from '../types/weather';
-import { LOCATION, TTS_CONFIG } from '../constants/weather';
+import { TTS_CONFIG } from '../constants/weather';
 
-const getRisk = (rainChance: number, humidity: number): 'low' | 'medium' | 'high' => {
-  if (rainChance > 60) return 'high';
-  if (rainChance > 30 || humidity > 70) return 'medium';
-  return 'low';
-};
-
-const getCondition = (rainChance: number, cloudCover: number) => {
-  if (rainChance > 60) return { condition: 'Có mưa', icon: 'cloudrain' };
-  if (rainChance > 30) return { condition: 'Có mây, khả năng mưa', icon: 'cloud' };
-  if (cloudCover > 50) return { condition: 'Nhiều mây', icon: 'cloud' };
-  return { condition: 'Nắng ráo', icon: 'sun' };
-};
+// 🚀 Đọc Base URL từ file .env
+const BASE_URL = process.env.EXPO_PUBLIC_WEATHER_BASE_URL || 'https://mylongaiv2.onrender.com';
 
 export const WeatherService = {
-  fetchForecast: async () => {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${LOCATION.LAT}&longitude=${LOCATION.LON}&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,wind_speed_10m,cloud_cover&current=temperature_2m,relative_humidity_2m,precipitation_probability,wind_speed_10m,cloud_cover&timezone=Asia%2FBangkok&forecast_days=1`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Không thể tải dữ liệu thời tiết');
-    const data = await res.json();
-
-    const cur = data.current;
-    const { condition, icon } = getCondition(cur.precipitation_probability ?? 0, cur.cloud_cover ?? 0);
-
-    const currentParams: CurrentWeather = {
-      temperature: cur.temperature_2m,
-      humidity: cur.relative_humidity_2m,
-      rainChance: cur.precipitation_probability ?? 0,
-      windSpeed: cur.wind_speed_10m,
-      condition, icon,
-    };
-
-    const now = new Date();
-    const times: string[] = data.hourly.time;
-    const temps: number[] = data.hourly.temperature_2m;
-    const humids: number[] = data.hourly.relative_humidity_2m;
-    const rains: number[] = data.hourly.precipitation_probability;
-    const winds: number[] = data.hourly.wind_speed_10m;
-
-    const forecastList: WeatherData[] = [];
-    for (let i = 0; i < times.length && forecastList.length < 12; i++) {
-      if (new Date(times[i]) < now) continue;
-      const hour = new Date(times[i]).getHours();
-      forecastList.push({
-        id: `hour-${times[i]}`,
-        time: `${hour.toString().padStart(2, '0')}:00`,
-        hour,
-        temperature: Math.round(temps[i] * 10) / 10,
-        humidity: Math.round(humids[i]),
-        rainChance: Math.round(rains[i]),
-        windSpeed: Math.round(winds[i] * 10) / 10,
-        risk: getRisk(rains[i], humids[i]),
+  // 🚀 Hàm giờ đây nhận lat, lon động từ các màn hình truyền vào
+  fetchForecast: async (lat: number, lon: number) => {
+    try {
+      const url = `${BASE_URL}/weather/analyze?lat=${lat}&lon=${lon}&save=true`;
+      
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
+
+      if (!res.ok) throw new Error(`Lỗi từ Backend: ${res.status}`);
+      
+      // Data này là cục JSON chính xác mà bạn đã cung cấp
+      const data = await res.json();
+
+      // =======================================================
+      // BÓC TÁCH DỮ LIỆU ĐÚNG CHUẨN BACKEND MỚI
+      // =======================================================
+      
+      // 1. Xác định icon dựa trên mức độ mưa (rain_level) từ Backend
+      let icon = 'sun';
+      if (data.prediction?.rain_level === 'high') icon = 'cloudrain';
+      else if (data.prediction?.rain_level === 'medium') icon = 'cloud';
+
+      // 2. Map dữ liệu vào cấu trúc CurrentWeather mà giao diện đang cần
+      const currentParams: CurrentWeather = {
+        temperature: data.api_weather?.temperature_c || 0,
+        humidity: data.api_weather?.humidity_percent || 0,
+        rainChance: data.prediction?.rain_score || 0, 
+        windSpeed: data.api_weather?.wind_speed_ms || 0,
+        condition: data.prediction?.rain_label || "Đang cập nhật",
+        icon: icon,
+      };
+
+      // 3. Xử lý danh sách dự báo
+      // Vì API mới KHÔNG trả về dự báo theo giờ (hourly), ta trả về mảng rỗng
+      // Điều này giúp giao diện không bị crash khi cố gắng render danh sách.
+      const forecastList: WeatherData[] = [];
+      
+      return { 
+        currentParams, 
+        forecastList, 
+        // Trả thêm advice và sensorData để dùng trên UI nếu cần
+        advice: data.advice || [], 
+        sensorData: data.sensor_data 
+      };
+
+    } catch (error) {
+      console.error("Lỗi API Weather:", error);
+      throw error;
     }
-    return { currentParams, forecastList };
   },
 
+  // 🚀 HÀM GỌI API GIỌNG NÓI FPT (GIỮ NGUYÊN HOÀN TOÀN)
   fetchTTSAudioUrl: async (text: string) => {
     const res = await fetch(TTS_CONFIG.PROXY_URL, {
       method: 'POST',

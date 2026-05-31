@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/src/contexts/AuthContext';
@@ -9,20 +9,65 @@ import {
   Mic, Volume2, Radio 
 } from 'lucide-react-native';
 
+// LƯU Ý: Import DataWrapper theo đúng đường dẫn của bạn
+import DataWrapper from '@/src/components/ui/DataWrapper'; 
+
 export default function HomeScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  // ================= STATE QUẢN LÝ TẢI DỮ LIỆU =================
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Giả lập hàm gọi API lấy số liệu Dashboard
+  const fetchDashboardData = async () => {
+    setError(null);
+    try {
+      // TODO: Thay bằng API thật của bạn
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Giả lập mạng chậm 1.5s
+      
+      // Bỏ comment dòng dưới để test giao diện Lỗi
+      // throw new Error("Mất kết nối đến máy chủ AI. Vui lòng kiểm tra lại mạng!"); 
+    } catch (err: any) {
+      setError(err.message || "Đã có lỗi xảy ra khi tải dữ liệu.");
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  // Gọi lần đầu khi mở app
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  // Xử lý khi người dùng kéo màn hình xuống để tải lại
+  const onRefresh = () => {
+    setIsRefreshing(true);
+    fetchDashboardData();
+  };
 
   return (
     <View className="flex-1 bg-[#0f172a]">
       <ScrollView 
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
-        bounces={false}
+        // Thêm tính năng kéo để tải lại
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={onRefresh} 
+            tintColor="#38bdf8" 
+            colors={['#38bdf8']} 
+            progressBackgroundColor="#1e293b" 
+          />
+        }
       >
         {/* ======================================================== */}
-        {/* 🚀 HERO HEADER TRÀN VIỀN                                 */}
+        {/* 🚀 HERO HEADER TRÀN VIỀN (Luôn hiển thị không bị che bởi Loading) */}
         {/* ======================================================== */}
         <View 
           className="bg-[#151f32] rounded-b-[40px] px-6 pb-12 shadow-2xl overflow-hidden relative"
@@ -61,108 +106,109 @@ export default function HomeScreen() {
         </View>
 
         {/* ======================================================== */}
-        {/* 🧩 HỆ THỐNG ĐIỀU HÀNH (Modules)                           */}
+        {/* 🧩 HỆ THỐNG ĐIỀU HÀNH (Được bọc bởi DataWrapper)         */}
         {/* ======================================================== */}
         <View className="px-6 pt-8">
           <Text className="text-slate-400 font-bold uppercase tracking-wider text-xs mb-4 ml-1">
             Bảng điều khiển
           </Text>
 
-          <View className="flex-row flex-wrap justify-between gap-y-4">
-            
-            {/* 1. Card Camera (Một nửa) */}
-            <TouchableOpacity 
-              onPress={() => router.push('/(dashboard)/camera')}
-              className="w-[48%] bg-[#1e293b] p-5 rounded-3xl border border-slate-700/50 shadow-lg"
-            >
-              <View className="flex-row justify-between items-start mb-4">
-                <View className="bg-cyan-500/20 p-3 rounded-2xl border border-cyan-500/20">
-                  <Video size={24} color="#06b6d4" />
+          {/* 🚀 SỬ DỤNG DATA WRAPPER TẠI ĐÂY */}
+          <DataWrapper 
+            isLoading={isLoading} 
+            error={error} 
+            onRetry={fetchDashboardData}
+            loadingMessage="Đang đồng bộ dữ liệu AI..."
+          >
+            <View className="flex-row flex-wrap justify-between gap-y-4">
+              
+              {/* 1. Card Camera */}
+              <TouchableOpacity 
+                onPress={() => router.push('/(dashboard)/camera')}
+                className="w-[48%] bg-[#1e293b] p-5 rounded-3xl border border-slate-700/50 shadow-lg"
+              >
+                <View className="flex-row justify-between items-start mb-4">
+                  <View className="bg-cyan-500/20 p-3 rounded-2xl border border-cyan-500/20">
+                    <Video size={24} color="#06b6d4" />
+                  </View>
+                  <ChevronRight size={18} color="#64748b" />
                 </View>
-                <ChevronRight size={18} color="#64748b" />
-              </View>
-              <Text className="text-white font-bold text-lg mb-1">Camera AI</Text>
-              <View className="flex-row items-center gap-1.5">
-                <View className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <Text className="text-emerald-400 text-xs font-semibold">Đang hoạt động</Text>
-              </View>
-            </TouchableOpacity>
+                <Text className="text-white font-bold text-lg mb-1">Camera AI</Text>
+                <View className="flex-row items-center gap-1.5">
+                  <View className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <Text className="text-emerald-400 text-xs font-semibold">Đang hoạt động</Text>
+                </View>
+              </TouchableOpacity>
 
-            {/* 2. Card Thời tiết (Một nửa) */}
-            <TouchableOpacity 
-              onPress={() => router.push('/(dashboard)/weather')}
-              className="w-[48%] bg-[#1e293b] p-5 rounded-3xl border border-slate-700/50 shadow-lg"
-            >
-              <View className="flex-row justify-between items-start mb-4">
-                <View className="bg-orange-500/20 p-3 rounded-2xl border border-orange-500/20">
-                  <CloudSun size={24} color="#f97316" />
+              {/* 2. Card Thời tiết */}
+              <TouchableOpacity 
+                onPress={() => router.push('/(dashboard)/weather')}
+                className="w-[48%] bg-[#1e293b] p-5 rounded-3xl border border-slate-700/50 shadow-lg"
+              >
+                <View className="flex-row justify-between items-start mb-4">
+                  <View className="bg-orange-500/20 p-3 rounded-2xl border border-orange-500/20">
+                    <CloudSun size={24} color="#f97316" />
+                  </View>
+                  <ChevronRight size={18} color="#64748b" />
                 </View>
-                <ChevronRight size={18} color="#64748b" />
-              </View>
-              <Text className="text-white font-bold text-lg mb-1">Thời tiết</Text>
-              <Text className="text-slate-400 text-xs font-semibold">Cập nhật lúc 19:08</Text>
-            </TouchableOpacity>
+                <Text className="text-white font-bold text-lg mb-1">Thời tiết</Text>
+                <Text className="text-slate-400 text-xs font-semibold">Cập nhật lúc 19:08</Text>
+              </TouchableOpacity>
 
-            {/* 3. CARD LỊCH SỬ (Trải dài Full-width) */}
-            <TouchableOpacity 
-              onPress={() => router.push('/(dashboard)/history')}
-              className="w-full bg-[#1e293b] p-5 rounded-3xl border border-slate-700/50 shadow-lg mt-1"
-            >
-              <View className="flex-row justify-between items-start mb-4">
-                <View className="bg-purple-500/20 p-3 rounded-2xl border border-purple-500/20">
-                  <BarChart3 size={24} color="#c084fc" />
+              {/* 3. CARD LỊCH SỬ */}
+              <TouchableOpacity 
+                onPress={() => router.push('/(dashboard)/history')}
+                className="w-full bg-[#1e293b] p-5 rounded-3xl border border-slate-700/50 shadow-lg mt-1"
+              >
+                <View className="flex-row justify-between items-start mb-4">
+                  <View className="bg-purple-500/20 p-3 rounded-2xl border border-purple-500/20">
+                    <BarChart3 size={24} color="#c084fc" />
+                  </View>
+                  <ChevronRight size={18} color="#64748b" />
                 </View>
-                <ChevronRight size={18} color="#64748b" />
-              </View>
-              
-              <Text className="text-white font-bold text-xl mb-3">Lịch sử & Báo cáo</Text>
-              
-              {/* Cụm tóm tắt số liệu */}
-              <View className="flex-row items-center gap-3">
-                <View className="flex-row items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-                  <Calendar size={14} color="#94a3b8" />
-                  <Text className="text-slate-300 text-xs font-semibold">14 mẻ bánh</Text>
+                <Text className="text-white font-bold text-xl mb-3">Lịch sử & Báo cáo</Text>
+                <View className="flex-row items-center gap-3">
+                  <View className="flex-row items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+                    <Calendar size={14} color="#94a3b8" />
+                    <Text className="text-slate-300 text-xs font-semibold">14 mẻ bánh</Text>
+                  </View>
+                  <View className="flex-row items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
+                    <TrendingUp size={14} color="#34d399" />
+                    <Text className="text-emerald-400 text-xs font-bold">Thành công 71.4%</Text>
+                  </View>
                 </View>
-                <View className="flex-row items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
-                  <TrendingUp size={14} color="#34d399" />
-                  <Text className="text-emerald-400 text-xs font-bold">Thành công 71.4%</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
+              </TouchableOpacity>
 
-            {/* 🚀 4. CARD AI VOICE ALERT */}
-            <TouchableOpacity 
-              onPress={() => router.push('/(dashboard)/voice' as any)} // Đã trỏ tới màn hình voice.tsx
-              className="w-full bg-[#1e293b] p-5 rounded-3xl border border-slate-700/50 shadow-lg mt-1 relative overflow-hidden"
-            >
-              {/* Ánh sáng nền mờ */}
-              <View className="absolute -right-10 -top-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl" />
-              
-              <View className="flex-row justify-between items-start mb-4 z-10">
-                <View className="bg-indigo-500/20 p-3 rounded-2xl border border-indigo-500/30">
-                  <Mic size={24} color="#818cf8" />
+              {/* 4. CARD AI VOICE ALERT */}
+              <TouchableOpacity 
+                onPress={() => router.push('/(dashboard)/voice' as any)}
+                className="w-full bg-[#1e293b] p-5 rounded-3xl border border-slate-700/50 shadow-lg mt-1 relative overflow-hidden"
+              >
+                <View className="absolute -right-10 -top-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl" />
+                <View className="flex-row justify-between items-start mb-4 z-10">
+                  <View className="bg-indigo-500/20 p-3 rounded-2xl border border-indigo-500/30">
+                    <Mic size={24} color="#818cf8" />
+                  </View>
+                  <ChevronRight size={18} color="#64748b" />
                 </View>
-                <ChevronRight size={18} color="#64748b" />
-              </View>
-              
-              <Text className="text-white font-bold text-xl mb-1 z-10">Cảnh báo Giọng nói</Text>
-              <Text className="text-slate-400 text-sm mb-4 z-10">AI Voice Assistant tự động</Text>
-              
-              <View className="flex-row items-center gap-3 z-10">
-                <View className="flex-row items-center gap-1.5 bg-indigo-500/10 px-3 py-1.5 rounded-lg border border-indigo-500/30">
-                  <Volume2 size={14} color="#818cf8" />
-                  <Text className="text-indigo-400 text-xs font-bold uppercase tracking-wider">Đang bật</Text>
+                <Text className="text-white font-bold text-xl mb-1 z-10">Cảnh báo Giọng nói</Text>
+                <Text className="text-slate-400 text-sm mb-4 z-10">AI Voice Assistant tự động</Text>
+                <View className="flex-row items-center gap-3 z-10">
+                  <View className="flex-row items-center gap-1.5 bg-indigo-500/10 px-3 py-1.5 rounded-lg border border-indigo-500/30">
+                    <Volume2 size={14} color="#818cf8" />
+                    <Text className="text-indigo-400 text-xs font-bold uppercase tracking-wider">Đang bật</Text>
+                  </View>
+                  <View className="flex-row items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+                    <Radio size={14} color="#94a3b8" />
+                    <Text className="text-slate-300 text-xs font-semibold">4 thông báo chờ</Text>
+                  </View>
                 </View>
-                <View className="flex-row items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-                  <Radio size={14} color="#94a3b8" />
-                  <Text className="text-slate-300 text-xs font-semibold">4 thông báo chờ</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
+              </TouchableOpacity>
 
-          </View>
+            </View>
+          </DataWrapper>
+          
         </View>
-
       </ScrollView>
     </View>
   );

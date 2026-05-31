@@ -10,10 +10,10 @@ import {
 
 const ADMIN_MENU = [
   { path: '/(admin)/overview', icon: LayoutDashboard, label: 'Tổng quan', color: '#3b82f6' }, // Blue
-  { path: '/(admin)/farms', icon: Factory, label: 'Trang trại', color: '#10b981' }, // Emerald
+  { path: '/(admin)/farms', icon: Factory, label: 'Khu vực và thiết bị', color: '#10b981' }, // Emerald
   { path: '/(admin)/batches', icon: PackageCheck, label: 'Mẻ bánh', color: '#f59e0b' }, // Amber
   { path: '/(admin)/cameras', icon: Camera, label: 'Camera AI', color: '#06b6d4' }, // Cyan
-  { path: '/(admin)/risks', icon: AlertTriangle, label: 'Rủi ro', color: '#ef4444' }, // Red
+  { path: '/(admin)/risks', icon: AlertTriangle, label: 'Thư viện lỗi AI', color: '#ef4444' }, // Red
   { path: '/(admin)/revenue', icon: DollarSign, label: 'Doanh thu', color: '#22c55e' }, // Green
   { path: '/(admin)/analytics', icon: LineChart, label: 'Phân tích', color: '#8b5cf6' }, // Violet
   { path: '/(admin)/users', icon: Users, label: 'Người dùng', color: '#ec4899' }, // Pink
