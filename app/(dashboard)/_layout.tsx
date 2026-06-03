@@ -56,6 +56,10 @@ export default function DashboardLayout() {
         name="voice" 
         options={{ title: 'Giọng nói', href: null,tabBarIcon: ({ color }) => <CloudSun color={color} size={24} /> }} 
       />
+        <Tabs.Screen 
+        name="weather-alerts" 
+        options={{ title: 'Giọng nói', href: null,tabBarIcon: ({ color }) => <CloudSun color={color} size={24} /> }} 
+      />
       {/* Tab 3: Nhận diện AI (YOLO) */}
       <Tabs.Screen 
         name="ai-detect" 

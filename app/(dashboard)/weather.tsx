@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, Dimensions, TouchableOpacity, RefreshControl } from 'react-native';
 import { 
   Thermometer, Droplets, CloudRain, Wind, 
-  Bookmark, BookmarkCheck, Lightbulb, Cpu, CloudLightning 
+  Bookmark, BookmarkCheck, Cpu, CloudLightning,
+  AlertTriangle, ChevronRight, CheckCircle 
 } from 'lucide-react-native';
 import { LineChart } from 'react-native-chart-kit';
 import Toast from 'react-native-toast-message';
+import { useRouter } from 'expo-router';
 
 // 🚀 IMPORT DATA WRAPPER VÀ HOOK
 import DataWrapper from '@/src/components/ui/DataWrapper';
-import { useWeather } from '@/src/hooks/useWeather'; // LƯU Ý: Sửa lại đường dẫn import hook nếu cần
+import { useWeather } from '@/src/hooks/useWeather';
 
 const { width } = Dimensions.get('window');
 
@@ -86,8 +88,8 @@ const HourlyForecastCard = ({ data }: { data: any[] }) => {
 // 🚀 MÀN HÌNH CHÍNH (WEATHER SCREEN)
 // ==========================================
 export default function WeatherScreen() {
-  // 🚀 Gọi dữ liệu sống từ Backend
-  const { currentWeather, forecastData, advice, sensorData, loading, error, refetch } = useWeather();
+  const router = useRouter(); 
+  const { currentWeather, forecastData, sensorData, loading, error, refetch } = useWeather();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const onRefresh = async () => {
@@ -95,6 +97,20 @@ export default function WeatherScreen() {
     await refetch();
     setIsRefreshing(false);
   };
+
+  // 🚀 Logic xác định trạng thái cho thẻ Alert thu nhỏ
+  const getAlertConfig = () => {
+    if (!currentWeather) return null;
+    if (currentWeather.isRaining || currentWeather.rainChance > 60) {
+      return { bg: 'bg-rose-500/20', border: 'border-rose-500/50', text: 'text-rose-400', icon: CloudLightning, title: 'CẢNH BÁO MƯA KHẨN CẤP' };
+    }
+    if (currentWeather.rainChance > 30 || currentWeather.humidity > 75) {
+      return { bg: 'bg-amber-500/20', border: 'border-amber-500/50', text: 'text-amber-400', icon: AlertTriangle, title: 'RỦI RO THỜI TIẾT KÉM' };
+    }
+    return { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', icon: CheckCircle, title: 'ĐIỀU KIỆN PHƠI TỐT' };
+  };
+
+  const alertConfig = getAlertConfig();
 
   return (
     <>
@@ -108,7 +124,6 @@ export default function WeatherScreen() {
         <View className="mb-6 mt-2 flex-row justify-between items-center">
           <View>
             <Text className="text-white text-3xl font-bold tracking-tight">Thời tiết xưởng</Text>
-            {/* 🚀 Đã thêm Condition */}
             {currentWeather?.condition ? (
               <Text className="text-cyan-400 text-sm mt-1 font-semibold">{currentWeather.condition}</Text>
             ) : (
@@ -121,9 +136,30 @@ export default function WeatherScreen() {
           </View>
         </View>
 
-        {/* 🚀 BỌC DATA WRAPPER TẠI ĐÂY ĐỂ XỬ LÝ LOADING/ERROR */}
+        {/* 🚀 BỌC DATA WRAPPER */}
         <DataWrapper isLoading={loading && !isRefreshing} error={error} onRetry={refetch} loadingMessage="Đang lấy dữ liệu thời tiết...">
           
+          {/* 🚀 THẺ MINI CẢNH BÁO THỜI TIẾT */}
+          {alertConfig && (
+            <TouchableOpacity 
+              onPress={() => router.push('/(dashboard)/weather-alerts')} 
+              className={`flex-row items-center justify-between p-4 mb-6 rounded-2xl border ${alertConfig.bg} ${alertConfig.border}`}
+            >
+              <View className="flex-row items-center gap-3">
+                <alertConfig.icon size={24} color={alertConfig.text.replace('text-', '').replace('400', '')} className={alertConfig.text} />
+                <View>
+                  <Text className={`font-black uppercase tracking-wider text-sm ${alertConfig.text}`}>
+                    {alertConfig.title}
+                  </Text>
+                  <Text className="text-slate-300 text-xs mt-0.5">Nhấn để xem phân tích AI chi tiết</Text>
+                </View>
+              </View>
+              <View className="bg-slate-900/50 p-1.5 rounded-full">
+                <ChevronRight size={18} color="#94a3b8" />
+              </View>
+            </TouchableOpacity>
+          )}
+
           {/* --- 4 THẺ CHỈ SỐ --- */}
           <View className="flex-row flex-wrap justify-between mb-8">
             <View className="w-[48%] bg-[#1F1A18] p-4 rounded-2xl border border-orange-900/50 mb-4 shadow-lg shadow-orange-900/20">
@@ -132,7 +168,6 @@ export default function WeatherScreen() {
                 <Text className="text-slate-300 ml-2 text-xs">Nhiệt độ</Text>
               </View>
               <Text className="text-3xl font-extrabold text-orange-500">{currentWeather?.temperature ?? '--'}°C</Text>
-              {/* 🚀 Đã thêm Pressure */}
               {currentWeather?.pressure !== undefined && (
                 <Text className="text-slate-500 text-[10px] mt-1 font-mono">Áp suất: {currentWeather.pressure} hPa</Text>
               )}
@@ -146,7 +181,7 @@ export default function WeatherScreen() {
               <Text className="text-3xl font-extrabold text-blue-500">{currentWeather?.humidity ?? '--'}%</Text>
             </View>
 
-            {/* 🚀 Cập nhật thẻ Mưa: Đổi màu và thêm Icon Sét nếu đang mưa + MaxPrecip12h */}
+            {/* Cập nhật thẻ Mưa */}
             <View className={`w-[48%] p-4 rounded-2xl border mb-4 shadow-lg ${currentWeather?.isRaining ? 'bg-rose-950/40 border-rose-800/80 shadow-rose-900/10' : 'bg-[#14222A] border-cyan-900/50 shadow-cyan-900/20'}`}>
               <View className="flex-row items-center mb-2">
                 {currentWeather?.isRaining ? (
@@ -175,22 +210,7 @@ export default function WeatherScreen() {
             </View>
           </View>
 
-          {/* 🚀 KHU VỰC: AI ADVICE TỪ BACKEND */}
-          {advice && advice.length > 0 && (
-            <View className="bg-indigo-500/10 p-5 rounded-3xl border border-indigo-500/30 mb-6">
-              <View className="flex-row items-center gap-2 mb-4 border-b border-indigo-500/20 pb-3">
-                <Lightbulb size={20} color="#818cf8" />
-                <Text className="text-indigo-400 font-bold text-lg">AI Khuyến nghị</Text>
-              </View>
-              {advice.map((adv, idx) => (
-                <Text key={idx} className="text-indigo-100/90 text-sm mb-2 leading-5">
-                  • {adv}
-                </Text>
-              ))}
-            </View>
-          )}
-
-          {/* 🚀 KHU VỰC: THÔNG SỐ CẢM BIẾN */}
+          {/* THÔNG SỐ CẢM BIẾN */}
           {sensorData && (
             <View className="bg-slate-800/50 p-5 rounded-3xl border border-slate-700 mb-6 flex-row items-center justify-between">
               <View>
@@ -208,10 +228,10 @@ export default function WeatherScreen() {
             </View>
           )}
 
-          {/* --- KHU VỰC BIỂU ĐỒ & BẢNG CHI TIẾT (Sẽ ẩn nếu API chưa hỗ trợ hourly) --- */}
+          {/* BIỂU ĐỒ & BẢNG CHI TIẾT */}
           {forecastData && forecastData.length > 0 && (
             <View>
-              {/* Biểu đồ 1: Nhiệt độ & Độ ẩm */}
+              {/* Biểu đồ 1 */}
               <View className="bg-[#151E2F] p-5 rounded-3xl border border-slate-800 mb-6 shadow-xl shadow-black/40">
                 <Text className="text-white font-bold text-lg mb-6">Dự báo nhiệt độ & độ ẩm</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -237,7 +257,7 @@ export default function WeatherScreen() {
                 </ScrollView>
               </View>
 
-              {/* Biểu đồ 2: Khả năng mưa */}
+              {/* Biểu đồ 2 */}
               <View className="bg-[#151E2F] p-5 rounded-3xl border border-slate-800 shadow-xl shadow-black/40">
                 <Text className="text-white font-bold text-lg mb-6">Dự báo khả năng mưa</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
