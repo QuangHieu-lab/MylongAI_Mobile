@@ -28,8 +28,11 @@ export const WeatherService = {
       
       // 1. Xác định icon dựa trên mức độ mưa (rain_level) từ Backend
       let icon = 'sun';
-      if (data.prediction?.rain_level === 'high') icon = 'cloudrain';
-      else if (data.prediction?.rain_level === 'medium') icon = 'cloud';
+      if (data.prediction?.currently_raining || data.prediction?.rain_level === 'high') {
+        icon = 'cloudrain';
+      } else if (data.prediction?.rain_level === 'medium') {
+        icon = 'cloud';
+      }
 
       // 2. Map dữ liệu vào cấu trúc CurrentWeather mà giao diện đang cần
       const currentParams: CurrentWeather = {
@@ -39,6 +42,10 @@ export const WeatherService = {
         windSpeed: data.api_weather?.wind_speed_ms || 0,
         condition: data.prediction?.rain_label || "Đang cập nhật",
         icon: icon,
+        // 🚀 BỔ SUNG 3 TRƯỜNG MỚI ĐỂ KHỚP VỚI TYPES VÀ UI MỚI
+        pressure: data.api_weather?.pressure_hpa || 0,
+        maxPrecip12h: data.prediction?.max_precip_probability_12h || 0,
+        isRaining: data.prediction?.currently_raining || false,
       };
 
       // 3. Xử lý danh sách dự báo

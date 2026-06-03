@@ -12,14 +12,13 @@ import {
 import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
 
-// 🚀 IMPORT DATA WRAPPER
+// 🚀 IMPORT DATA WRAPPER VÀ HOOK WEATHER
 import DataWrapper from '@/src/components/ui/DataWrapper'; 
+import { useWeather } from '@/src/hooks/useWeather'; 
 
 // ================= DỮ LIỆU MOCK =================
-const trackingHistory = [
+const INITIAL_HISTORY = [
   { id: '1', time: '13:00', message: 'Mẻ bánh bắt đầu - AI Vision phát hiện bánh tráng', type: 'success' },
-  { id: '2', time: '14:15', message: 'Độ khô đạt 45% - Tiến độ tốt', type: 'info' },
-  { id: '3', time: '15:00', message: 'Độ ẩm tăng nhẹ', type: 'warning' },
 ];
 
 const MOCK_CAMERAS = [
@@ -35,25 +34,25 @@ export default function CameraMonitoringScreen() {
   
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
-  
   const [selectedCam, setSelectedCam] = useState(MOCK_CAMERAS[0]);
 
-  // ================= STATE TẢI DỮ LIỆU (LOADING & ERROR) =================
+  // ================= TÍCH HỢP AI TÍNH TOÁN ĐỘ KHÔ =================
+  const { currentWeather } = useWeather();
+  const [dynamicDryness, setDynamicDryness] = useState(0);
+  const [elapsedMinutes, setElapsedMinutes] = useState(0);
+  const [predictedTimeLeft, setPredictedTimeLeft] = useState<number | null>(null);
+  const [logs, setLogs] = useState(INITIAL_HISTORY);
+
+  // ================= STATE TẢI DỮ LIỆU =================
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Giả lập Fetch Dữ liệu luồng Camera từ hệ thống CCTV
+  // Giả lập Fetch CCTV
   const fetchCameraData = async () => {
     setError(null);
     try {
-      // Giả lập mạng trễ 1.2s
       await new Promise(resolve => setTimeout(resolve, 1200));
-      
-      // Bỏ comment dòng dưới để Test lỗi mạng
-      // throw new Error("Máy chủ CCTV không phản hồi. Vui lòng kiểm tra kết nối mạng nội bộ!");
-      
-      // Reset lại cam đầu tiên khi tải xong
       setSelectedCam(MOCK_CAMERAS[0]);
     } catch (err: any) {
       setError(err.message || "Lỗi tải luồng Video AI.");
@@ -65,35 +64,111 @@ export default function CameraMonitoringScreen() {
 
   useEffect(() => {
     fetchCameraData();
-
-    // Giả lập bắn Toast cảnh báo mưa
-    setTimeout(() => {
-      Toast.show({
-        type: 'error', 
-        text1: '🌧️ Cảnh báo mưa (Nguy cơ Cao)',
-        text2: 'Khả năng mưa 79%. Khung giờ: 14:00 - 16:00',
-        visibilityTime: 6000, 
-        position: 'top',
-      });
-    }, 2500); 
   }, []);
+
+  // 🚀 LOGIC AI: Cập nhật tiến độ khô và ETA theo thời gian thực
+  useEffect(() => {
+    if (selectedCam.status === 'offline') return;
+
+    const timer = setInterval(() => {
+      setElapsedMinutes(prev => prev + 1);
+
+      setDynamicDryness(prevDryness => {
+        if (prevDryness >= 100) {
+          setPredictedTimeLeft(0);
+          return 100;
+        }
+
+        // Nếu trời đang mưa -> Tạm dừng bốc hơi nước
+        if (currentWeather?.isRaining) {
+          setPredictedTimeLeft(null);
+          return prevDryness;
+        }
+
+        // Tốc độ phơi (Nội suy từ Nhiệt độ, Độ ẩm, Gió)
+        const temp = currentWeather?.temperature || 35;
+        const humid = currentWeather?.humidity || 50;
+        const wind = currentWeather?.windSpeed || 2;
+
+        const baseRate = 100 / 240; 
+        const currentRatePerMinute = baseRate * (temp / 35) * (50 / humid) * (1 + (wind * 0.05));
+        
+        // Cập nhật ETA (Dự báo thời gian còn lại)
+        const remainingDryness = 100 - (prevDryness + currentRatePerMinute);
+        const minutesLeft = Math.max(0, Math.ceil(remainingDryness / currentRatePerMinute));
+        setPredictedTimeLeft(minutesLeft);
+
+        return Math.min(100, prevDryness + currentRatePerMinute);
+      });
+    }, 1000); // Đặt 1000ms = 1 phút để dễ test UI
+
+    return () => clearInterval(timer);
+  }, [currentWeather, selectedCam.status]);
+
+  // 🚀 LOGIC AI: Ghi nhật ký tự động
+  useEffect(() => {
+    const drynessInt = Math.floor(dynamicDryness);
+    if (drynessInt > 0 && drynessInt % 25 === 0) {
+      const lastLog = logs[0];
+      if (lastLog && lastLog.message.includes(`${drynessInt}%`)) return; // Tránh trùng lặp
+
+      const now = new Date();
+      const timeStr = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+
+      let message = "";
+      let type = "info";
+
+      if (drynessInt >= 100) {
+        message = `Độ khô đạt 100% - Yêu cầu thu hoạch ngay!`;
+        type = "success";
+      } else if (currentWeather?.humidity && currentWeather.humidity > 70) {
+        message = `Độ khô đạt ${drynessInt}% - Tiến độ chậm do ẩm cao.`;
+        type = "warning";
+      } else {
+        message = `Độ khô đạt ${drynessInt}% - Tiến độ rất tốt.`;
+        type = "info";
+      }
+
+      setLogs((prev) => [{ id: Math.random().toString(), time: timeStr, message, type }, ...prev]);
+    }
+  }, [dynamicDryness]);
+
 
   const onRefresh = () => {
     setIsRefreshing(true);
     fetchCameraData();
   };
 
-  // Hàm xử lý chọn Camera
   const handleSelectCamera = (cam: typeof MOCK_CAMERAS[0]) => {
     setSelectedCam(cam);
     if (cam.status === 'offline') {
       Toast.show({ type: 'error', text1: `🚫 Mất kết nối`, text2: `Không thể kết nối tới ${cam.name}`, position: 'top' });
-    } else if (cam.location.includes('Sân phơi')) {
-      Toast.show({ type: 'info', text1: `⛅ Cập nhật thời tiết`, text2: `Khu vực ${cam.location} đang có nắng tốt.`, position: 'top' });
     } else {
       Toast.show({ type: 'success', text1: `✅ Chuyển luồng thành công`, text2: `Đang giám sát tại ${cam.location}.`, position: 'top' });
     }
   };
+
+  // 🚀 Tính toán chuỗi hiển thị Thời gian dựa trên AI
+  let displayTimeLeft = '--';
+  let displayTimeEst = '--:--';
+
+  if (selectedCam.status === 'online') {
+    if (predictedTimeLeft === null) {
+      displayTimeLeft = 'Đang dừng';
+      displayTimeEst = 'Chưa xác định';
+    } else if (predictedTimeLeft === 0) {
+      displayTimeLeft = 'Hoàn tất';
+      displayTimeEst = 'Bây giờ';
+    } else {
+      const h = Math.floor(predictedTimeLeft / 60);
+      const m = predictedTimeLeft % 60;
+      displayTimeLeft = h > 0 ? `${h}h ${m}p` : `${m}p`;
+
+      // Giả lập thời gian hoàn thành (Hiện tại + số phút)
+      const estDate = new Date(Date.now() + predictedTimeLeft * 60000); // 60000 = 1 min in real time, adjust if test interval is 1000
+      displayTimeEst = `${estDate.getHours().toString().padStart(2, '0')}:${estDate.getMinutes().toString().padStart(2, '0')}`;
+    }
+  }
 
   // ================= TÁCH GIAO DIỆN VIDEO CAMERA =================
   const renderCameraContent = (isFull: boolean) => (
@@ -124,7 +199,7 @@ export default function CameraMonitoringScreen() {
 
       {selectedCam.status === 'online' && (
         <View className="absolute bottom-5 self-center bg-slate-900/90 backdrop-blur-md px-5 py-3 rounded-full border border-cyan-500/30 shadow-lg flex-row items-center gap-2">
-          <Text className="text-cyan-400 font-semibold text-sm">Độ khô hiện tại: {selectedCam.progress}%</Text>
+          <Text className="text-cyan-400 font-semibold text-sm">Độ khô hiện tại: {dynamicDryness.toFixed(1)}%</Text>
           <ChevronRight size={16} color="#22d3ee" />
         </View>
       )}
@@ -145,7 +220,7 @@ export default function CameraMonitoringScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#22d3ee" colors={['#22d3ee']} />}
       >
-        {/* ================= HEADER (Không bị ẩn đi khi Loading) ================= */}
+        {/* ================= HEADER ================= */}
         <View className="flex-row items-center justify-between mb-4 mt-2">
           <View>
             <View className="flex-row items-center gap-2">
@@ -163,7 +238,7 @@ export default function CameraMonitoringScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 🚀 BỌC NỘI DUNG VÀO DATA WRAPPER */}
+        {/* 🚀 DATA WRAPPER */}
         <DataWrapper 
           isLoading={isLoading} 
           error={error} 
@@ -204,7 +279,7 @@ export default function CameraMonitoringScreen() {
               </View>
             </View>
 
-            {/* Phần Phải: Chỉ số IoT */}
+            {/* Phần Phải: Chỉ số IoT Tích hợp Dữ liệu Thời Tiết */}
             <View className={isTablet ? 'flex-[1]' : 'w-full'}>
               <View className="flex-row items-center justify-between mb-4 px-1">
                 <Text className="text-white text-xl font-bold">Thông số khu vực</Text>
@@ -221,7 +296,8 @@ export default function CameraMonitoringScreen() {
                   </View>
                   <Text className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">MỨC HIỆN TẠI</Text>
                   <Text className={`text-3xl font-extrabold ${selectedCam.status === 'online' ? 'text-orange-500' : 'text-slate-500'}`}>
-                    {selectedCam.temp}{selectedCam.temp !== '--' ? '°C' : ''}
+                    {selectedCam.status === 'online' ? (currentWeather?.temperature || selectedCam.temp) : '--'}
+                    {selectedCam.status === 'online' && '°C'}
                   </Text>
                 </View>
 
@@ -234,7 +310,8 @@ export default function CameraMonitoringScreen() {
                   </View>
                   <Text className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">HIỆN TẠI</Text>
                   <Text className={`text-3xl font-extrabold ${selectedCam.status === 'online' ? 'text-cyan-400' : 'text-slate-500'}`}>
-                    {selectedCam.hum}{selectedCam.hum !== '--' ? '%' : ''}
+                    {selectedCam.status === 'online' ? (currentWeather?.humidity || selectedCam.hum) : '--'}
+                    {selectedCam.status === 'online' && '%'}
                   </Text>
                 </View>
               </View>
@@ -243,7 +320,7 @@ export default function CameraMonitoringScreen() {
                 <View className="flex-row items-center justify-between mb-6">
                   <View>
                     <Text className="text-slate-400 text-sm font-medium mb-1">Dự kiến hoàn thành</Text>
-                    <Text className="text-white text-3xl font-extrabold tracking-tight">{selectedCam.timeEst}</Text>
+                    <Text className="text-white text-3xl font-extrabold tracking-tight">{displayTimeEst}</Text>
                   </View>
                   <View className={`p-3 rounded-2xl border ${selectedCam.status === 'online' ? 'bg-indigo-500/20 border-indigo-500/30' : 'bg-slate-800 border-slate-700'}`}>
                     <Clock size={24} color={selectedCam.status === 'online' ? '#818cf8' : '#64748b'} />
@@ -253,14 +330,14 @@ export default function CameraMonitoringScreen() {
                 <View className="w-full bg-slate-800 h-3 rounded-full overflow-hidden mb-3 border border-slate-700/50">
                   <View 
                     className={`h-full rounded-full ${selectedCam.status === 'online' ? 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]' : 'bg-slate-600'}`} 
-                    style={{ width: `${selectedCam.progress}%` }} 
+                    style={{ width: `${selectedCam.status === 'online' ? dynamicDryness : 0}%` }} 
                   />
                 </View>
                 <View className="flex-row justify-between items-center">
                   <Text className={`font-bold text-sm ${selectedCam.status === 'online' ? 'text-emerald-400' : 'text-slate-500'}`}>
-                    {selectedCam.progress}% Khô
+                    {selectedCam.status === 'online' ? dynamicDryness.toFixed(1) : 0}% Khô
                   </Text>
-                  <Text className="text-slate-500 font-medium text-xs">Còn {selectedCam.timeLeft}</Text>
+                  <Text className="text-slate-500 font-medium text-xs">Còn {displayTimeLeft}</Text>
                 </View>
               </View>
             </View>
@@ -268,8 +345,7 @@ export default function CameraMonitoringScreen() {
         </DataWrapper>
       </ScrollView>
 
-      {/* ================= MODAL LỊCH SỬ ================= */}
-      {/* ... (Phần Modal Lịch sử và Fullscreen giữ nguyên) ... */}
+      {/* ================= MODAL LỊCH SỬ & CẢNH BÁO AI ================= */}
       <Modal visible={isNotificationModalOpen} animationType="slide" transparent={true} onRequestClose={() => setIsNotificationModalOpen(false)}>
         <View className="flex-1 justify-end bg-black/60">
           <View className="bg-[#1e293b] h-[80%] rounded-t-3xl border-t border-slate-700 p-6 shadow-2xl">
@@ -281,22 +357,26 @@ export default function CameraMonitoringScreen() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              <View className="bg-rose-900/20 border border-rose-500/30 p-4 rounded-2xl mb-6 shadow-sm">
-                <View className="flex-row items-center gap-2 mb-2">
-                  <CloudRain size={20} color="#fb7185" />
-                  <Text className="text-rose-400 font-bold text-lg">Cảnh báo mưa (Cao)</Text>
+              
+              {/* Box cảnh báo linh động theo Weather */}
+              {currentWeather?.isRaining || (currentWeather?.rainChance ?? 0) > 60 ? (
+                <View className="bg-rose-900/20 border border-rose-500/30 p-4 rounded-2xl mb-6 shadow-sm">
+                  <View className="flex-row items-center gap-2 mb-2">
+                    <CloudRain size={20} color="#fb7185" />
+                    <Text className="text-rose-400 font-bold text-lg">Cảnh báo mưa (Nguy cơ Cao)</Text>
+                  </View>
+                  <Text className="text-slate-300 text-sm mb-3">Khả năng mưa {currentWeather?.rainChance}%. Nguy cơ ướt bánh.</Text>
+                  <View className="bg-rose-500/10 p-3 rounded-xl border border-rose-500/20 flex-row gap-2">
+                    <AlertTriangle size={16} color="#fb7185" className="mt-0.5" />
+                    <Text className="text-rose-300 text-xs flex-1 leading-5">Khuyến nghị: Yêu cầu thu hoạch bánh ngay lập tức!</Text>
+                  </View>
                 </View>
-                <Text className="text-slate-300 text-sm mb-3">Khả năng mưa 79% - Khung giờ 14:00 - 16:00</Text>
-                <View className="bg-rose-500/10 p-3 rounded-xl border border-rose-500/20 flex-row gap-2">
-                  <AlertTriangle size={16} color="#fb7185" className="mt-0.5" />
-                  <Text className="text-rose-300 text-xs flex-1 leading-5">Khuyến nghị: Chuẩn bị thu bánh nếu tình hình xấu đi.</Text>
-                </View>
-              </View>
+              ) : null}
 
-              <Text className="text-slate-400 font-bold uppercase tracking-wider text-xs mb-4 ml-1">Lịch sử mẻ bánh</Text>
+              <Text className="text-slate-400 font-bold uppercase tracking-wider text-xs mb-4 ml-1">Lịch sử mẻ bánh (AI Log)</Text>
 
               <View className="pl-3">
-                {trackingHistory.map((item) => {
+                {logs.map((item) => {
                   let Icon = Info; let colorClass = 'text-blue-400'; let bgClass = 'bg-blue-500/10 border-blue-500/20';
                   if (item.type === 'success') { Icon = CheckCircle; colorClass = 'text-emerald-400'; bgClass = 'bg-emerald-500/10 border-emerald-500/20'; } 
                   else if (item.type === 'warning') { Icon = AlertTriangle; colorClass = 'text-amber-400'; bgClass = 'bg-amber-500/10 border-amber-500/20'; }

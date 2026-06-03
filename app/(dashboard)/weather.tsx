@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, Dimensions, TouchableOpacity, RefreshControl } from 'react-native';
 import { 
   Thermometer, Droplets, CloudRain, Wind, 
-  Bookmark, BookmarkCheck, Lightbulb, Cpu 
+  Bookmark, BookmarkCheck, Lightbulb, Cpu, CloudLightning 
 } from 'lucide-react-native';
 import { LineChart } from 'react-native-chart-kit';
 import Toast from 'react-native-toast-message';
@@ -108,7 +108,12 @@ export default function WeatherScreen() {
         <View className="mb-6 mt-2 flex-row justify-between items-center">
           <View>
             <Text className="text-white text-3xl font-bold tracking-tight">Thời tiết xưởng</Text>
-            <Text className="text-slate-400 text-sm mt-1">Cập nhật theo thời gian thực</Text>
+            {/* 🚀 Đã thêm Condition */}
+            {currentWeather?.condition ? (
+              <Text className="text-cyan-400 text-sm mt-1 font-semibold">{currentWeather.condition}</Text>
+            ) : (
+              <Text className="text-slate-400 text-sm mt-1">Cập nhật theo thời gian thực</Text>
+            )}
           </View>
           
           <View className="bg-cyan-500/20 px-4 py-2 rounded-full border border-cyan-500/30">
@@ -127,6 +132,10 @@ export default function WeatherScreen() {
                 <Text className="text-slate-300 ml-2 text-xs">Nhiệt độ</Text>
               </View>
               <Text className="text-3xl font-extrabold text-orange-500">{currentWeather?.temperature ?? '--'}°C</Text>
+              {/* 🚀 Đã thêm Pressure */}
+              {currentWeather?.pressure !== undefined && (
+                <Text className="text-slate-500 text-[10px] mt-1 font-mono">Áp suất: {currentWeather.pressure} hPa</Text>
+              )}
             </View>
 
             <View className="w-[48%] bg-[#171A28] p-4 rounded-2xl border border-blue-900/50 mb-4 shadow-lg shadow-blue-900/20">
@@ -137,15 +146,27 @@ export default function WeatherScreen() {
               <Text className="text-3xl font-extrabold text-blue-500">{currentWeather?.humidity ?? '--'}%</Text>
             </View>
 
-            <View className="w-[48%] bg-[#14222A] p-4 rounded-2xl border border-cyan-900/50 shadow-lg shadow-cyan-900/20">
+            {/* 🚀 Cập nhật thẻ Mưa: Đổi màu và thêm Icon Sét nếu đang mưa + MaxPrecip12h */}
+            <View className={`w-[48%] p-4 rounded-2xl border mb-4 shadow-lg ${currentWeather?.isRaining ? 'bg-rose-950/40 border-rose-800/80 shadow-rose-900/10' : 'bg-[#14222A] border-cyan-900/50 shadow-cyan-900/20'}`}>
               <View className="flex-row items-center mb-2">
-                <CloudRain color="#06b6d4" size={18} />
-                <Text className="text-slate-300 ml-2 text-xs">Khả năng mưa</Text>
+                {currentWeather?.isRaining ? (
+                  <CloudLightning color="#f43f5e" size={18} />
+                ) : (
+                  <CloudRain color="#06b6d4" size={18} />
+                )}
+                <Text className={`ml-2 text-xs font-semibold ${currentWeather?.isRaining ? 'text-rose-400' : 'text-slate-300'}`}>
+                  {currentWeather?.isRaining ? 'Trời đang mưa' : 'Khả năng mưa'}
+                </Text>
               </View>
-              <Text className="text-3xl font-extrabold text-cyan-500">{currentWeather?.rainChance ?? '--'}%</Text>
+              <Text className={`text-3xl font-extrabold ${currentWeather?.isRaining ? 'text-rose-500' : 'text-cyan-500'}`}>
+                {currentWeather?.rainChance ?? '--'}%
+              </Text>
+              {currentWeather?.maxPrecip12h !== undefined && (
+                <Text className="text-slate-500 text-[10px] mt-1 font-mono">Đỉnh 12h: {currentWeather.maxPrecip12h}%</Text>
+              )}
             </View>
 
-            <View className="w-[48%] bg-[#132421] p-4 rounded-2xl border border-teal-900/50 shadow-lg shadow-teal-900/20">
+            <View className="w-[48%] bg-[#132421] p-4 rounded-2xl border border-teal-900/50 shadow-lg shadow-teal-900/20 mb-4">
               <View className="flex-row items-center mb-2">
                 <Wind color="#14b8a6" size={18} />
                 <Text className="text-slate-300 ml-2 text-xs">Gió</Text>
@@ -154,7 +175,7 @@ export default function WeatherScreen() {
             </View>
           </View>
 
-          {/* 🚀 KHU VỰC MỚI: AI ADVICE TỪ BACKEND */}
+          {/* 🚀 KHU VỰC: AI ADVICE TỪ BACKEND */}
           {advice && advice.length > 0 && (
             <View className="bg-indigo-500/10 p-5 rounded-3xl border border-indigo-500/30 mb-6">
               <View className="flex-row items-center gap-2 mb-4 border-b border-indigo-500/20 pb-3">
@@ -169,7 +190,7 @@ export default function WeatherScreen() {
             </View>
           )}
 
-          {/* 🚀 KHU VỰC MỚI: THÔNG SỐ CẢM BIẾN */}
+          {/* 🚀 KHU VỰC: THÔNG SỐ CẢM BIẾN */}
           {sensorData && (
             <View className="bg-slate-800/50 p-5 rounded-3xl border border-slate-700 mb-6 flex-row items-center justify-between">
               <View>

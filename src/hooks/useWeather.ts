@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import { CurrentWeather, WeatherData } from '../types/weather';
+// 🚀 Import thêm SensorData từ file types để loại bỏ kiểu "any"
+import { CurrentWeather, WeatherData, SensorData } from '../types/weather';
 import { WeatherService } from '../services/weather';
-import { LOCATION } from '../constants/weather'; // 👈 Import tọa độ mặc định
+import { LOCATION } from '../constants/weather'; 
 
 // 🚀 Cho phép truyền lat, lon vào Hook (Mặc định sẽ lấy tọa độ xưởng chính)
 export function useWeather(lat: number = LOCATION.LAT, lon: number = LOCATION.LON) {
@@ -11,7 +12,8 @@ export function useWeather(lat: number = LOCATION.LAT, lon: number = LOCATION.LO
   
   // 🚀 Thêm state để hứng lời khuyên AI và cảm biến từ API mới
   const [advice, setAdvice] = useState<string[]>([]);
-  const [sensorData, setSensorData] = useState<any>(null);
+  // 🚀 Đã thay kiểu 'any' thành 'SensorData | null' để TypeScript hỗ trợ check lỗi
+  const [sensorData, setSensorData] = useState<SensorData | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
