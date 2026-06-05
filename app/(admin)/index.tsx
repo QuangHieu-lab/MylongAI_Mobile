@@ -11,10 +11,9 @@ import {
 const ADMIN_MENU = [
   { path: '/(admin)/farms', icon: Factory, label: 'Khu vực và thiết bị', color: '#10b981' }, // Emerald
   { path: '/(admin)/revenue', icon: DollarSign, label: 'Doanh thu', color: '#22c55e' }, // Green
-  { path: '/(admin)/analytics', icon: LineChart, label: 'Phân tích', color: '#8b5cf6' }, // Violet
   { path: '/(admin)/users', icon: Users, label: 'Người dùng', color: '#ec4899' }, // Pink
 { path: '/(admin)/ai-performance', icon: BrainCircuit, label: 'Độ tin cậy AI', color: '#a855f7' }, // Purple
-  { path: '/(admin)/drying-cycles', icon: Sun, label: 'Chu kỳ phơi', color: '#eab308' }, // Yellow
+ 
 ];
 
 export default function AdminDashboardScreen() {

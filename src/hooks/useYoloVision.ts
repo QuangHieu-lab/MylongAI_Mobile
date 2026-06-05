@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
+// 🚀 1. Đổi cách import theo chuẩn API mới
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator'; 
 import { aiService } from '@/src/services/ai'; 
 import { toast } from '@/src/lib/toast'; 
 
@@ -17,17 +19,11 @@ export const useYoloVision = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false); 
   const [scanResult, setScanResult] = useState<any>(null); 
 
-  // ==============================
-  // ĐIỀU KHIỂN NÚT BẬT/TẮT CAMERA
-  // ==============================
   const toggleCamera = () => {
     setIsCameraActive(!isCameraActive);
     setScanResult(null); 
   };
 
-  // ==============================
-  // XỬ LÝ CHỌN ẢNH TỪ THƯ VIỆN
-  // ==============================
   const handlePickImage = async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -37,25 +33,39 @@ export const useYoloVision = () => {
       }
 
       let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'], 
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.8,
-        base64: true, // Thêm dòng này nếu API của bạn cần Base64 cho ảnh upload
+        quality: 0.8, 
       });
 
       if (!result.canceled) {
-        setSelectedImage(result.assets[0].uri);
+        const originalUri = result.assets[0].uri;
+
+        // ==========================================
+        // 🚀 2. API MỚI (Object-Oriented) CỦA EXPO
+        // ==========================================
+        // Bước A: Đưa ảnh vào Context và thay đổi kích thước
+        const imageRef = await ImageManipulator.manipulate(originalUri)
+          .resize({ width: 640 })
+          .renderAsync(); // Render ảnh ra bộ nhớ tạm
+          
+        // Bước B: Lưu lại ảnh đã thu nhỏ thành dạng JPEG nén 50%
+        const manipResult = await imageRef.saveAsync({
+          compress: 0.5,
+          format: SaveFormat.JPEG,
+        });
+
+        // Lúc này cảnh báo gạch ngang @deprecated đã hoàn toàn biến mất!
+        setSelectedImage(manipResult.uri);
         setScanResult(null);
       }
     } catch (error) {
+      console.error("Lỗi khi chọn/ép ảnh:", error);
       toast.error("Lỗi thư viện", "Không thể mở thư viện ảnh lúc này.");
     }
   };
 
-  // ==============================
-  // [API] HÀM QUÉT ẢNH UPLOAD
-  // ==============================
   const handleAnalyzeImage = async () => {
     if (!selectedImage) return;
 
@@ -75,18 +85,13 @@ export const useYoloVision = () => {
     }
   };
 
-  // ==============================
-  // 🚀 [API] HÀM CHỤP & QUÉT THỦ CÔNG (ĐÃ TỐI ƯU)
-  // ==============================
   const handleManualCapture = async (base64String: string) => {
-    // Ngăn chặn bấm spam khi đang phân tích
     if (isAnalyzing) return; 
 
     try {
       setIsAnalyzing(true);
       setScanResult(null);  
 
-      // Gửi Base64 lên server
       const response = await aiService.detectRealtime(base64String);
       processAiResponse(response);
 
@@ -99,9 +104,6 @@ export const useYoloVision = () => {
     }
   };
 
-  // ==============================
-  // HÀM CHUNG: XỬ LÝ JSON TỪ BACKEND
-  // ==============================
   const processAiResponse = (response: any) => {
     if (response && response.objects && response.objects.length > 0) {
       const detectedObj = response.objects[0]; 

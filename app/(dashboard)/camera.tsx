@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
   View, Text, ScrollView, useWindowDimensions, TouchableOpacity,
-  Modal, SafeAreaView, RefreshControl 
+  Modal, SafeAreaView, RefreshControl, TextInput, KeyboardAvoidingView, Platform 
 } from 'react-native';
 import { 
   Thermometer, Droplets, Clock, CircleDot, Maximize, 
   Minimize, ChevronRight, Bell, X, CheckCircle, 
   Info, AlertTriangle, CloudRain, ChevronLeft,
-  Camera, WifiOff, MapPin 
+  Camera, WifiOff, MapPin, Plus, Link // 🚀 Thêm icon Plus và Link
 } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
@@ -22,9 +22,9 @@ const INITIAL_HISTORY = [
 ];
 
 const MOCK_CAMERAS = [
-  { id: 'cam1', name: 'Camera Góc Trái', location: 'Sân phơi Khu A', status: 'online', temp: '36.5', hum: '45', progress: 31, timeLeft: '3h 31p', timeEst: '16:41' },
-  { id: 'cam2', name: 'Camera Toàn Cảnh', location: 'Khu sấy nhiệt', status: 'online', temp: '45.0', hum: '30', progress: 85, timeLeft: '0h 45p', timeEst: '14:20' },
-  { id: 'cam3', name: 'Camera Cổng Rào', location: 'Khu vực bốc dỡ', status: 'offline', temp: '--', hum: '--', progress: 0, timeLeft: '--', timeEst: '--' },
+  { id: 'cam1', name: 'Camera Góc Trái', location: 'Sân phơi Khu A', status: 'online', temp: '36.5', hum: '45', progress: 31, timeLeft: '3h 31p', timeEst: '16:41', streamUrl: '' },
+  { id: 'cam2', name: 'Camera Toàn Cảnh', location: 'Khu sấy nhiệt', status: 'online', temp: '45.0', hum: '30', progress: 85, timeLeft: '0h 45p', timeEst: '14:20', streamUrl: '' },
+  { id: 'cam3', name: 'Camera Cổng Rào', location: 'Khu vực bốc dỡ', status: 'offline', temp: '--', hum: '--', progress: 0, timeLeft: '--', timeEst: '--', streamUrl: '' },
 ];
 
 export default function CameraMonitoringScreen() {
@@ -34,7 +34,14 @@ export default function CameraMonitoringScreen() {
   
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
-  const [selectedCam, setSelectedCam] = useState(MOCK_CAMERAS[0]);
+  
+  // 🚀 Đưa danh sách Camera vào State để có thể Thêm mới
+  const [cameras, setCameras] = useState(MOCK_CAMERAS);
+  const [selectedCam, setSelectedCam] = useState(cameras[0]);
+
+  // 🚀 STATE CHO TÍNH NĂNG THÊM CAMERA MỚI
+  const [isAddCamModalOpen, setIsAddCamModalOpen] = useState(false);
+  const [newCamData, setNewCamData] = useState({ name: '', location: '', ip: '' });
 
   // ================= TÍCH HỢP AI TÍNH TOÁN ĐỘ KHÔ =================
   const { currentWeather } = useWeather();
@@ -53,7 +60,7 @@ export default function CameraMonitoringScreen() {
     setError(null);
     try {
       await new Promise(resolve => setTimeout(resolve, 1200));
-      setSelectedCam(MOCK_CAMERAS[0]);
+      setSelectedCam(cameras[0]);
     } catch (err: any) {
       setError(err.message || "Lỗi tải luồng Video AI.");
     } finally {
@@ -65,6 +72,41 @@ export default function CameraMonitoringScreen() {
   useEffect(() => {
     fetchCameraData();
   }, []);
+
+  // 🚀 HÀM XỬ LÝ THÊM CAMERA MỚI (Lưu vào State)
+  const handleConnectCamera = () => {
+    if (!newCamData.name || !newCamData.ip) {
+      Toast.show({ type: 'error', text1: 'Lỗi', text2: 'Vui lòng nhập tên và địa chỉ IP của Camera!', position: 'top' });
+      return;
+    }
+
+    // Tạo object camera mới
+    const newCamera = {
+      id: `cam_${Date.now()}`,
+      name: newCamData.name,
+      location: newCamData.location || 'Khu vực mới',
+      status: 'online', // Giả lập kết nối IP thành công
+      temp: '--', 
+      hum: '--', 
+      progress: 0, 
+      timeLeft: '--', 
+      timeEst: '--',
+      streamUrl: newCamData.ip // Lưu URL để sau này Backend/WebRTC lấy kéo luồng stream
+    };
+
+    // Cập nhật danh sách và đóng modal
+    setCameras(prev => [...prev, newCamera]);
+    setSelectedCam(newCamera);
+    setIsAddCamModalOpen(false);
+    setNewCamData({ name: '', location: '', ip: '' }); // Reset form
+    
+    Toast.show({ 
+      type: 'success', 
+      text1: 'Đã kết nối luồng Video', 
+      text2: `Kéo luồng thành công từ IP: ${newCamera.streamUrl}`, 
+      position: 'top' 
+    });
+  };
 
   // 🚀 LOGIC AI: Cập nhật tiến độ khô và ETA theo thời gian thực
   useEffect(() => {
@@ -79,13 +121,11 @@ export default function CameraMonitoringScreen() {
           return 100;
         }
 
-        // Nếu trời đang mưa -> Tạm dừng bốc hơi nước
         if (currentWeather?.isRaining) {
           setPredictedTimeLeft(null);
           return prevDryness;
         }
 
-        // Tốc độ phơi (Nội suy từ Nhiệt độ, Độ ẩm, Gió)
         const temp = currentWeather?.temperature || 35;
         const humid = currentWeather?.humidity || 50;
         const wind = currentWeather?.windSpeed || 2;
@@ -93,14 +133,13 @@ export default function CameraMonitoringScreen() {
         const baseRate = 100 / 240; 
         const currentRatePerMinute = baseRate * (temp / 35) * (50 / humid) * (1 + (wind * 0.05));
         
-        // Cập nhật ETA (Dự báo thời gian còn lại)
         const remainingDryness = 100 - (prevDryness + currentRatePerMinute);
         const minutesLeft = Math.max(0, Math.ceil(remainingDryness / currentRatePerMinute));
         setPredictedTimeLeft(minutesLeft);
 
         return Math.min(100, prevDryness + currentRatePerMinute);
       });
-    }, 1000); // Đặt 1000ms = 1 phút để dễ test UI
+    }, 1000); 
 
     return () => clearInterval(timer);
   }, [currentWeather, selectedCam.status]);
@@ -110,7 +149,7 @@ export default function CameraMonitoringScreen() {
     const drynessInt = Math.floor(dynamicDryness);
     if (drynessInt > 0 && drynessInt % 25 === 0) {
       const lastLog = logs[0];
-      if (lastLog && lastLog.message.includes(`${drynessInt}%`)) return; // Tránh trùng lặp
+      if (lastLog && lastLog.message.includes(`${drynessInt}%`)) return; 
 
       const now = new Date();
       const timeStr = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
@@ -148,7 +187,6 @@ export default function CameraMonitoringScreen() {
     }
   };
 
-  // 🚀 Tính toán chuỗi hiển thị Thời gian dựa trên AI
   let displayTimeLeft = '--';
   let displayTimeEst = '--:--';
 
@@ -164,8 +202,7 @@ export default function CameraMonitoringScreen() {
       const m = predictedTimeLeft % 60;
       displayTimeLeft = h > 0 ? `${h}h ${m}p` : `${m}p`;
 
-      // Giả lập thời gian hoàn thành (Hiện tại + số phút)
-      const estDate = new Date(Date.now() + predictedTimeLeft * 60000); // 60000 = 1 min in real time, adjust if test interval is 1000
+      const estDate = new Date(Date.now() + predictedTimeLeft * 60000); 
       displayTimeEst = `${estDate.getHours().toString().padStart(2, '0')}:${estDate.getMinutes().toString().padStart(2, '0')}`;
     }
   }
@@ -220,7 +257,6 @@ export default function CameraMonitoringScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#22d3ee" colors={['#22d3ee']} />}
       >
-        {/* ================= HEADER ================= */}
         <View className="flex-row items-center justify-between mb-4 mt-2">
           <View>
             <View className="flex-row items-center gap-2">
@@ -238,17 +274,12 @@ export default function CameraMonitoringScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 🚀 DATA WRAPPER */}
-        <DataWrapper 
-          isLoading={isLoading} 
-          error={error} 
-          onRetry={fetchCameraData}
-          loadingMessage="Đang kết nối đến hệ thống CCTV AI..."
-        >
-          {/* Thanh Chọn Camera */}
+        <DataWrapper isLoading={isLoading} error={error} onRetry={fetchCameraData} loadingMessage="Đang kết nối đến hệ thống CCTV AI...">
+          
+          {/* 🚀 THANH CHỌN CAMERA (CÓ THÊM NÚT KẾT NỐI CAMERA MỚI) */}
           <View className="mb-6 -mx-5 px-5">
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="py-2">
-              {MOCK_CAMERAS.map(cam => (
+              {cameras.map(cam => (
                 <TouchableOpacity
                   key={cam.id}
                   onPress={() => handleSelectCamera(cam)}
@@ -268,18 +299,25 @@ export default function CameraMonitoringScreen() {
                   </View>
                 </TouchableOpacity>
               ))}
+
+              {/* 🚀 NÚT THÊM CAMERA */}
+              <TouchableOpacity
+                onPress={() => setIsAddCamModalOpen(true)}
+                className="mr-5 p-3 rounded-[20px] border border-dashed border-slate-600 bg-slate-800/30 flex-row items-center justify-center min-w-[140px] shadow-sm"
+              >
+                <Plus size={20} color="#94a3b8" />
+                <Text className="text-slate-400 font-bold ml-2 text-sm">Thêm Camera</Text>
+              </TouchableOpacity>
             </ScrollView>
           </View>
 
           <View className={isTablet ? 'flex-row gap-8' : 'flex-col gap-6'}>
-            {/* Phần Trái: Camera Video */}
             <View className={isTablet ? 'flex-[2]' : 'w-full'}>
               <View className="w-full aspect-[4/3] bg-[#1e293b] rounded-[32px] border border-slate-700/50 overflow-hidden relative shadow-lg shadow-black/50">
                 {renderCameraContent(false)}
               </View>
             </View>
 
-            {/* Phần Phải: Chỉ số IoT Tích hợp Dữ liệu Thời Tiết */}
             <View className={isTablet ? 'flex-[1]' : 'w-full'}>
               <View className="flex-row items-center justify-between mb-4 px-1">
                 <Text className="text-white text-xl font-bold">Thông số khu vực</Text>
@@ -296,8 +334,7 @@ export default function CameraMonitoringScreen() {
                   </View>
                   <Text className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">MỨC HIỆN TẠI</Text>
                   <Text className={`text-3xl font-extrabold ${selectedCam.status === 'online' ? 'text-orange-500' : 'text-slate-500'}`}>
-                    {selectedCam.status === 'online' ? (currentWeather?.temperature || selectedCam.temp) : '--'}
-                    {selectedCam.status === 'online' && '°C'}
+                    {selectedCam.temp}{selectedCam.temp !== '--' ? '°C' : ''}
                   </Text>
                 </View>
 
@@ -310,8 +347,7 @@ export default function CameraMonitoringScreen() {
                   </View>
                   <Text className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">HIỆN TẠI</Text>
                   <Text className={`text-3xl font-extrabold ${selectedCam.status === 'online' ? 'text-cyan-400' : 'text-slate-500'}`}>
-                    {selectedCam.status === 'online' ? (currentWeather?.humidity || selectedCam.hum) : '--'}
-                    {selectedCam.status === 'online' && '%'}
+                    {selectedCam.hum}{selectedCam.hum !== '--' ? '%' : ''}
                   </Text>
                 </View>
               </View>
@@ -345,7 +381,7 @@ export default function CameraMonitoringScreen() {
         </DataWrapper>
       </ScrollView>
 
-      {/* ================= MODAL LỊCH SỬ & CẢNH BÁO AI ================= */}
+      {/* ================= MODAL LỊCH SỬ ================= */}
       <Modal visible={isNotificationModalOpen} animationType="slide" transparent={true} onRequestClose={() => setIsNotificationModalOpen(false)}>
         <View className="flex-1 justify-end bg-black/60">
           <View className="bg-[#1e293b] h-[80%] rounded-t-3xl border-t border-slate-700 p-6 shadow-2xl">
@@ -357,8 +393,6 @@ export default function CameraMonitoringScreen() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              
-              {/* Box cảnh báo linh động theo Weather */}
               {currentWeather?.isRaining || (currentWeather?.rainChance ?? 0) > 60 ? (
                 <View className="bg-rose-900/20 border border-rose-500/30 p-4 rounded-2xl mb-6 shadow-sm">
                   <View className="flex-row items-center gap-2 mb-2">
@@ -368,12 +402,12 @@ export default function CameraMonitoringScreen() {
                   <Text className="text-slate-300 text-sm mb-3">Khả năng mưa {currentWeather?.rainChance}%. Nguy cơ ướt bánh.</Text>
                   <View className="bg-rose-500/10 p-3 rounded-xl border border-rose-500/20 flex-row gap-2">
                     <AlertTriangle size={16} color="#fb7185" className="mt-0.5" />
-                    <Text className="text-rose-300 text-xs flex-1 leading-5">Khuyến nghị: Yêu cầu thu hoạch bánh ngay lập tức!</Text>
+                    <Text className="text-rose-300 text-xs flex-1 leading-5">Khuyến nghị: Chuẩn bị thu bánh nếu tình hình xấu đi.</Text>
                   </View>
                 </View>
               ) : null}
 
-              <Text className="text-slate-400 font-bold uppercase tracking-wider text-xs mb-4 ml-1">Lịch sử mẻ bánh (AI Log)</Text>
+              <Text className="text-slate-400 font-bold uppercase tracking-wider text-xs mb-4 ml-1">Lịch sử mẻ bánh</Text>
 
               <View className="pl-3">
                 {logs.map((item) => {
@@ -402,6 +436,7 @@ export default function CameraMonitoringScreen() {
         </View>
       </Modal>
 
+      {/* ================= MODAL FULLSCREEN VIDEO ================= */}
       <Modal visible={isFullscreen} animationType="fade" transparent={false} onRequestClose={() => setIsFullscreen(false)}>
         <SafeAreaView className="flex-1 bg-black">
           <View className="absolute top-12 left-0 right-0 z-50 flex-row justify-between items-start px-6 pointer-events-box-none">
@@ -419,6 +454,66 @@ export default function CameraMonitoringScreen() {
           </View>
         </SafeAreaView>
       </Modal>
+
+      {/* 🚀 MODAL NHẬP THÔNG TIN THÊM CAMERA MỚI */}
+      <Modal visible={isAddCamModalOpen} animationType="fade" transparent={true} onRequestClose={() => setIsAddCamModalOpen(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 justify-center items-center bg-black/70 px-6">
+          <View className="bg-[#1e293b] w-full max-w-md rounded-3xl border border-slate-700 p-6 shadow-2xl">
+            <View className="flex-row justify-between items-center mb-6">
+              <Text className="text-white text-xl font-bold">Thêm Camera Mới</Text>
+              <TouchableOpacity onPress={() => setIsAddCamModalOpen(false)} className="p-2 bg-slate-800 rounded-full">
+                <X size={20} color="#94a3b8" />
+              </TouchableOpacity>
+            </View>
+
+            <View className="mb-4">
+              <Text className="text-slate-400 font-bold text-xs mb-2 ml-1">TÊN CAMERA</Text>
+              <TextInput 
+                className="bg-slate-800 text-white p-4 rounded-2xl border border-slate-700 focus:border-cyan-500"
+                placeholder="VD: Sân Phơi Khu B"
+                placeholderTextColor="#64748b"
+                value={newCamData.name}
+                onChangeText={(text) => setNewCamData({...newCamData, name: text})}
+              />
+            </View>
+
+            <View className="mb-4">
+              <Text className="text-slate-400 font-bold text-xs mb-2 ml-1">VỊ TRÍ / KHU VỰC</Text>
+              <TextInput 
+                className="bg-slate-800 text-white p-4 rounded-2xl border border-slate-700 focus:border-cyan-500"
+                placeholder="VD: Khu lưu trữ"
+                placeholderTextColor="#64748b"
+                value={newCamData.location}
+                onChangeText={(text) => setNewCamData({...newCamData, location: text})}
+              />
+            </View>
+
+            <View className="mb-6">
+              <Text className="text-slate-400 font-bold text-xs mb-2 ml-1">ĐỊA CHỈ IP / RTSP STREAM URL</Text>
+              <View className="flex-row items-center bg-slate-800 rounded-2xl border border-slate-700 focus:border-cyan-500 px-4">
+                <Link size={18} color="#64748b" />
+                <TextInput 
+                  className="flex-1 text-white p-4 ml-2"
+                  placeholder="rtsp://192.168.1.10/stream"
+                  placeholderTextColor="#64748b"
+                  keyboardType="url"
+                  autoCapitalize="none"
+                  value={newCamData.ip}
+                  onChangeText={(text) => setNewCamData({...newCamData, ip: text})}
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity 
+              onPress={handleConnectCamera}
+              className="bg-cyan-600 p-4 rounded-full items-center justify-center shadow-lg shadow-cyan-900"
+            >
+              <Text className="text-white font-bold text-base tracking-wide">Kết nối Camera</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
     </>
   );
 }
