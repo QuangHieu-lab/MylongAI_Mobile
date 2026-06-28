@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { 
   ChevronLeft, AlertTriangle, CloudLightning, Sun, 
-  CheckCircle, ShieldAlert, CloudRain, Info, 
-  Activity, Wind, Droplets
+  CheckCircle, ShieldAlert, CloudRain, Activity, Wind, Droplets
 } from 'lucide-react-native';
 
 // 🚀 IMPORT DATA WRAPPER VÀ HOOK
 import DataWrapper from '@/src/components/ui/DataWrapper';
 import { useWeather } from '@/src/hooks/useWeather';
-
-const { width } = Dimensions.get('window');
 
 export default function WeatherAlertsScreen() {
   const router = useRouter();
@@ -25,17 +22,18 @@ export default function WeatherAlertsScreen() {
     setIsRefreshing(false);
   };
 
-  // Đánh giá mức độ rủi ro để render UI tương ứng
+  // 🚀 LOGIC ĐỒNG BỘ CẢNH BÁO (GIỐNG WEATHER.TSX)
   const getSeverityConfig = () => {
     if (!currentWeather) return { color: '#34d399', bg: 'bg-emerald-500', title: 'Đang tải...', icon: Sun, action: 'Chờ dữ liệu AI...' };
-    if (currentWeather.isRaining || currentWeather.rainChance > 60) {
+    
+    if (currentWeather.isRaining || currentWeather.rainChance >= 70) {
       return { 
         color: '#fb7185', bg: 'bg-red-500', 
         title: 'NGUY HIỂM: CÓ MƯA!', icon: CloudLightning, 
         action: 'KÍCH HOẠT THU BÁNH KHẨN CẤP' 
       };
     }
-    if (currentWeather.rainChance > 30 || currentWeather.humidity > 75) {
+    if (currentWeather.rainChance >= 40) {
       return { 
         color: '#fbbf24', bg: 'bg-amber-500', 
         title: 'CẢNH BÁO RỦI RO', icon: AlertTriangle, 
@@ -65,7 +63,7 @@ export default function WeatherAlertsScreen() {
           </TouchableOpacity>
           <View>
             <Text className="text-white text-xl font-bold tracking-tight">Phân tích Khí tượng</Text>
-            <Text className="text-cyan-400 text-xs mt-0.5 font-bold">HỆ THỐNG AI CẢNH BÁO</Text>
+            <Text className="text-cyan-400 text-xs mt-0.5 font-bold uppercase tracking-wider">Hệ thống AI Cảnh báo</Text>
           </View>
         </View>
         <View className="w-10 h-10 bg-cyan-500/10 rounded-full flex items-center justify-center border border-cyan-500/30">
@@ -83,12 +81,9 @@ export default function WeatherAlertsScreen() {
           
           {currentWeather && (
             <>
-              {/* ================= BANNER CẢNH BÁO CHÍNH (BIG HERO) ================= */}
+              {/* BANNER CẢNH BÁO CHÍNH */}
               <View className={`w-full p-6 rounded-[32px] border mb-6 relative overflow-hidden ${severity.bg}/10 border-${severity.bg.split('-')[1]}-500/40 shadow-xl`}>
-                {currentWeather.isRaining && (
-                  <View className="absolute inset-0 bg-red-500/15 animate-pulse" />
-                )}
-                <View className={`absolute -right-10 -top-10 w-48 h-48 rounded-full blur-3xl opacity-20 ${severity.bg}`} />
+                {currentWeather.isRaining && <View className="absolute inset-0 bg-red-500/15 animate-pulse" />}
                 
                 <View className="items-center mb-6 mt-4 relative z-10">
                   <View className={`p-4 rounded-full ${severity.bg}/20 mb-4 border border-${severity.bg.split('-')[1]}-500/30 shadow-lg`}>
@@ -103,7 +98,6 @@ export default function WeatherAlertsScreen() {
                   </Text>
                 </View>
 
-                {/* Hành động khuyến nghị (Lệnh AI) */}
                 <View className={`bg-slate-900/80 p-4 rounded-2xl border border-${severity.bg.split('-')[1]}-500/30 items-center`}>
                   <Text className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Lệnh Hành Động</Text>
                   <Text style={{ color: severity.color }} className="text-base font-bold text-center">
@@ -112,7 +106,7 @@ export default function WeatherAlertsScreen() {
                 </View>
               </View>
 
-              {/* ================= CHI TIẾT NGUY CƠ MƯA ================= */}
+              {/* CHI TIẾT MƯA */}
               <Text className="text-slate-400 font-bold uppercase tracking-wider text-xs mb-3 ml-1">Phân tích lượng mưa</Text>
               <View className="bg-[#1e293b] p-5 rounded-3xl border border-slate-700/50 flex-row items-center justify-between mb-6 shadow-lg">
                 <View className="flex-row items-center gap-4">
@@ -120,64 +114,52 @@ export default function WeatherAlertsScreen() {
                     <CloudRain size={28} color="#06b6d4" />
                   </View>
                   <View>
-                    <Text className="text-slate-400 text-xs font-semibold mb-1">Khả năng mưa hiện tại</Text>
+                    <Text className="text-slate-400 text-xs font-semibold mb-1">Khả năng mưa</Text>
                     <Text className="text-white font-black text-2xl">{currentWeather.rainChance}%</Text>
                   </View>
                 </View>
                 <View className="w-[1px] h-12 bg-slate-700" />
                 <View className="pr-4">
-                  <Text className="text-slate-400 text-xs font-semibold mb-1 text-right">Đỉnh điểm 12h</Text>
+                  <Text className="text-slate-400 text-xs font-semibold mb-1 text-right">Đỉnh 12h</Text>
                   <Text className="text-red-400 font-black text-2xl text-right">{currentWeather.maxPrecip12h}%</Text>
                 </View>
               </View>
 
-              {/* ================= TÓM TẮT ĐIỀU KIỆN HIỆN TẠI ================= */}
+              {/* THÔNG SỐ KHÍ TƯỢNG */}
               <View className="flex-row flex-wrap justify-between gap-y-4 mb-6">
-                <View className="w-[48%] bg-[#1e293b] p-4 rounded-3xl border border-slate-700/50 shadow-sm">
+                <View className="w-[48%] bg-[#1e293b] p-4 rounded-3xl border border-slate-700/50">
                   <View className="flex-row items-center gap-2 mb-2">
                     <Droplets size={16} color="#3b82f6" />
-                    <Text className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Độ ẩm</Text>
+                    <Text className="text-slate-400 text-[10px] font-bold uppercase">Độ ẩm</Text>
                   </View>
                   <Text className="text-white font-extrabold text-xl">{currentWeather.humidity}%</Text>
-                  {currentWeather.humidity > 80 && <Text className="text-amber-400 text-[10px] mt-1">Hơi ẩm cao, khó khô</Text>}
                 </View>
-
-                <View className="w-[48%] bg-[#1e293b] p-4 rounded-3xl border border-slate-700/50 shadow-sm">
+                <View className="w-[48%] bg-[#1e293b] p-4 rounded-3xl border border-slate-700/50">
                   <View className="flex-row items-center gap-2 mb-2">
                     <Wind size={16} color="#14b8a6" />
-                    <Text className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Sức gió</Text>
+                    <Text className="text-slate-400 text-[10px] font-bold uppercase">Sức gió</Text>
                   </View>
-                  <Text className="text-white font-extrabold text-xl">{currentWeather.windSpeed} <Text className="text-sm font-medium text-slate-500">m/s</Text></Text>
-                  {currentWeather.windSpeed > 5 && <Text className="text-emerald-400 text-[10px] mt-1">Gió tốt, phơi nhanh</Text>}
+                  <Text className="text-white font-extrabold text-xl">{currentWeather.windSpeed} <Text className="text-xs font-medium text-slate-500">m/s</Text></Text>
                 </View>
               </View>
 
-              {/* ================= BÁO CÁO TỪ TRỢ LÝ AI ================= */}
+              {/* BÁO CÁO AI */}
               {advice && advice.length > 0 && (
                 <>
-                  <Text className="text-indigo-400 font-bold uppercase tracking-wider text-xs mb-3 ml-1">
-                    Báo cáo từ trợ lý AI
-                  </Text>
-                  <View className="bg-indigo-900/10 p-5 rounded-3xl border border-indigo-500/20 mb-6 shadow-sm">
+                  <Text className="text-indigo-400 font-bold uppercase tracking-wider text-xs mb-3 ml-1">Trợ lý AI phân tích</Text>
+                  <View className="bg-indigo-900/10 p-5 rounded-3xl border border-indigo-500/20 mb-6">
                     {advice.map((adv, idx) => (
-                      <View key={idx} className={`flex-row gap-3 py-3.5 ${idx !== advice.length - 1 ? 'border-b border-indigo-500/10' : ''}`}>
-                        <View className="bg-indigo-500/20 p-1.5 rounded-full h-fit mt-0.5">
-                          <Activity size={14} color="#818cf8" />
-                        </View>
-                        <Text className="text-slate-300 font-medium leading-5 pr-4 flex-1">{adv}</Text>
+                      <View key={idx} className={`flex-row gap-3 py-3 ${idx !== advice.length - 1 ? 'border-b border-indigo-500/10' : ''}`}>
+                        <View className="bg-indigo-500/20 p-1.5 rounded-full h-fit mt-0.5"><Activity size={14} color="#818cf8" /></View>
+                        <Text className="text-slate-300 font-medium leading-5 pr-2 flex-1">{adv}</Text>
                       </View>
                     ))}
                   </View>
                 </>
               )}
 
-              {/* Nút Quay lại nhanh */}
-              <TouchableOpacity 
-                onPress={() => router.back()}
-                className="w-full bg-slate-800 py-4 rounded-full border border-slate-700 mt-2 flex-row justify-center items-center gap-2"
-              >
-                <ChevronLeft size={20} color="#94a3b8" />
-                <Text className="text-slate-300 font-bold">Quay lại Tổng quan</Text>
+              <TouchableOpacity onPress={() => router.back()} className="w-full bg-slate-800 py-4 rounded-full border border-slate-700 items-center">
+                <Text className="text-white font-bold">Quay lại Tổng quan</Text>
               </TouchableOpacity>
             </>
           )}

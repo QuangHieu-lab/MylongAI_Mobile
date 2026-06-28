@@ -1,49 +1,48 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-// 🚀 Import thêm SensorData từ file types để loại bỏ kiểu "any"
 import { CurrentWeather, WeatherData, SensorData } from '../types/weather';
-import { WeatherService } from '../services/weather';
+// 🚀 Chú ý đường dẫn import khớp với tên file service
+import { WeatherService } from '../services/weather'; 
 import { LOCATION } from '../constants/weather'; 
 
-// 🚀 Cho phép truyền lat, lon vào Hook (Mặc định sẽ lấy tọa độ xưởng chính)
 export function useWeather(lat: number = LOCATION.LAT, lon: number = LOCATION.LON) {
   const [currentWeather, setCurrentWeather] = useState<CurrentWeather | null>(null);
   const [forecastData, setForecastData] = useState<WeatherData[]>([]);
   
-  // 🚀 Thêm state để hứng lời khuyên AI và cảm biến từ API mới
   const [advice, setAdvice] = useState<string[]>([]);
-  // 🚀 Đã thay kiểu 'any' thành 'SensorData | null' để TypeScript hỗ trợ check lỗi
   const [sensorData, setSensorData] = useState<SensorData | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const appState = useRef(AppState.currentState);
 
-  const loadWeather = async () => {
+  // 🚀 Tối ưu hiệu suất với useCallback
+  const loadWeather = useCallback(async () => {
     try {
       setLoading(true);
       
-      // 🚀 Truyền tọa độ vào service
       const data = await WeatherService.fetchForecast(lat, lon);
       
       setCurrentWeather(data.currentParams);
       setForecastData(data.forecastList);
-      setAdvice(data.advice);         // Cập nhật lời khuyên
-      setSensorData(data.sensorData); // Cập nhật dữ liệu cảm biến
+      setAdvice(data.advice);         
+      setSensorData(data.sensorData); 
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Lỗi tải thời tiết');
     } finally {
       setLoading(false);
     }
-  };
+  }, [lat, lon]); // Chỉ tạo lại hàm nếu tọa độ thay đổi
 
   useEffect(() => {
     loadWeather();
-    const interval = setInterval(loadWeather, 10 * 60 * 1000); // 10 phút / lần
+    
+    // Auto refresh mỗi 10 phút
+    const interval = setInterval(loadWeather, 10 * 60 * 1000); 
 
+    // Auto refresh khi người dùng mở lại App từ chế độ nền
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
-      // Mở app lên là load lại ngay
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         loadWeather();
       }
@@ -54,8 +53,7 @@ export function useWeather(lat: number = LOCATION.LAT, lon: number = LOCATION.LO
       clearInterval(interval);
       subscription.remove();
     };
-  }, [lat, lon]); // 👈 Thêm dependency để API tự gọi lại nếu tọa độ thay đổi
+  }, [loadWeather]); // 👈 Đưa loadWeather vào dependency array
 
-  // 🚀 Xuất thêm advice, sensorData và hàm refetch để các màn hình khác dùng
   return { currentWeather, forecastData, advice, sensorData, loading, error, refetch: loadWeather };
 }

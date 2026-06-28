@@ -156,28 +156,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
 
               {/* 3. CARD LỊCH SỬ */}
-              <TouchableOpacity 
-                onPress={() => router.push('/(dashboard)/history')}
-                className="w-full bg-[#1e293b] p-5 rounded-3xl border border-slate-700/50 shadow-lg mt-1"
-              >
-                <View className="flex-row justify-between items-start mb-4">
-                  <View className="bg-purple-500/20 p-3 rounded-2xl border border-purple-500/20">
-                    <BarChart3 size={24} color="#c084fc" />
-                  </View>
-                  <ChevronRight size={18} color="#64748b" />
-                </View>
-                <Text className="text-white font-bold text-xl mb-3">Lịch sử & Báo cáo</Text>
-                <View className="flex-row items-center gap-3">
-                  <View className="flex-row items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-                    <Calendar size={14} color="#94a3b8" />
-                    <Text className="text-slate-300 text-xs font-semibold">14 mẻ bánh</Text>
-                  </View>
-                  <View className="flex-row items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
-                    <TrendingUp size={14} color="#34d399" />
-                    <Text className="text-emerald-400 text-xs font-bold">Thành công 71.4%</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
+             
 
               {/* 4. CARD AI VOICE ALERT */}
               <TouchableOpacity 

@@ -4,7 +4,7 @@
 // 1. KIỂU DỮ LIỆU DÀNH CHO FRONTEND UI
 // ==========================================
 
-// Dữ liệu theo giờ (Giữ nguyên để dự phòng cho biểu đồ sau này)
+// Dữ liệu theo giờ (Dự phòng cho biểu đồ)
 export interface WeatherData {
   id: string;
   time: string;
@@ -16,7 +16,7 @@ export interface WeatherData {
   risk: 'low' | 'medium' | 'high';
 }
 
-// Dữ liệu hiện tại (🚀 Đã cập nhật thêm các trường từ Backend)
+// Dữ liệu hiện tại (Dùng để hiển thị lên màn hình chính)
 export interface CurrentWeather {
   temperature: number;
   humidity: number;
@@ -24,21 +24,24 @@ export interface CurrentWeather {
   rainChance: number;
   condition: string;
   icon: string;
-  // Các trường mới:
+  // Các trường mới mapping từ Backend:
+  precipitation_mm: number;
   pressure: number;
   maxPrecip12h: number;
   isRaining: boolean;
+  rainLevel: 'low' | 'medium' | 'high';
+  advice: string[];
 }
 
 // ==========================================
-// 2. KIỂU DỮ LIỆU GỐC TỪ BACKEND API
+// 2. KIỂU DỮ LIỆU GỐC TỪ BACKEND API (/weather/analyze)
 // ==========================================
 
 export interface SensorData {
   temperature_c: number;
   humidity_percent: number;
-  has_rice_paper: boolean;
-  vision_confidence: number;
+  has_rice_paper: boolean;    // 🚀 Bổ sung trường này
+  vision_confidence: number;  // 🚀 Bổ sung trường này
   source: string;
 }
 
