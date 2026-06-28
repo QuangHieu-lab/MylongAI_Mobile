@@ -1,15 +1,9 @@
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-// 🚀 1. Đổi cách import theo chuẩn API mới
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator'; 
-import { aiService } from '@/src/services/ai'; 
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import { aiService } from '@/src/services/ai'; // 🚀 Nhớ check đúng tên file aiService
 import { toast } from '@/src/lib/toast'; 
-
-const CLASS_NAMES: Record<number, string> = {
-  0: "Bánh tráng mè đen",
-  1: "Bánh tráng sữa",
-  2: "Bánh tráng rách (Lỗi)",
-};
 
 export const useYoloVision = () => {
   const [activeTab, setActiveTab] = useState<'realtime' | 'upload'>('upload');
@@ -42,21 +36,15 @@ export const useYoloVision = () => {
       if (!result.canceled) {
         const originalUri = result.assets[0].uri;
 
-        // ==========================================
-        // 🚀 2. API MỚI (Object-Oriented) CỦA EXPO
-        // ==========================================
-        // Bước A: Đưa ảnh vào Context và thay đổi kích thước
         const imageRef = await ImageManipulator.manipulate(originalUri)
           .resize({ width: 640 })
-          .renderAsync(); // Render ảnh ra bộ nhớ tạm
+          .renderAsync(); 
           
-        // Bước B: Lưu lại ảnh đã thu nhỏ thành dạng JPEG nén 50%
         const manipResult = await imageRef.saveAsync({
           compress: 0.5,
           format: SaveFormat.JPEG,
         });
 
-        // Lúc này cảnh báo gạch ngang @deprecated đã hoàn toàn biến mất!
         setSelectedImage(manipResult.uri);
         setScanResult(null);
       }
@@ -74,9 +62,9 @@ export const useYoloVision = () => {
       setScanResult(null);
       
       const response = await aiService.detectRicePaper(selectedImage);
-      processAiResponse(response); 
+      await processAiResponse(response, selectedImage); 
       
-      toast.success("Thành công", "Đã phân tích xong ảnh mẻ bánh!");
+      toast.success("Thành công", "Đã phân tích và lưu vào Lịch sử!");
     } catch (error: any) {
       console.error("Lỗi API Tải ảnh:", error);
       toast.error("Mất kết nối", "Không thể gửi ảnh đến Máy chủ AI.");
@@ -93,9 +81,9 @@ export const useYoloVision = () => {
       setScanResult(null);  
 
       const response = await aiService.detectRealtime(base64String);
-      processAiResponse(response);
+      await processAiResponse(response, base64String); 
 
-      toast.success("Hoàn tất", "Đã quét và phân tích xong khung hình!");
+      toast.success("Hoàn tất", "Đã quét, phân tích và lưu kết quả!");
     } catch (error) {
       console.error("Lỗi API Camera thủ công:", error);
       toast.error("Lỗi phân tích", "Không thể phân tích ảnh chụp. Vui lòng thử lại.");
@@ -104,17 +92,71 @@ export const useYoloVision = () => {
     }
   };
 
-  const processAiResponse = (response: any) => {
+  const processAiResponse = async (response: any, sourceImage: string | null) => {
     if (response && response.objects && response.objects.length > 0) {
-      const detectedObj = response.objects[0]; 
-      const translatedName = CLASS_NAMES[detectedObj.class] || `Nhãn lạ (ID: ${detectedObj.class})`;
+      const rawObjects = response.objects;
+      
+      // 🚀 Lọc bỏ nhiễu (< 40%) và tính Trung bình Độ tin cậy (GIỐNG BẢN WEB)
+      const validObjects = rawObjects.filter((d: any) => d.confidence >= 0.4);
+      const totalCount = validObjects.length;
 
+      let confidenceScore = 0;
+      if (totalCount > 0) {
+        const totalConf = validObjects.reduce((sum: number, d: any) => sum + d.confidence, 0);
+        confidenceScore = Math.round((totalConf / totalCount) * 100);
+      } else {
+        // Nếu các vật thể đều < 40% (bị lọc hết)
+        setScanResult({
+          status: 'empty',
+          quality: 'Khung hình trống hoặc nhiễu',
+          confidence: '0%',
+          dryness: 'N/A'
+        });
+        toast.info("Cảnh báo", "AI phát hiện vật thể nhưng độ tin cậy quá thấp.");
+        return;
+      }
+
+      // Cập nhật UI quét
       setScanResult({
-        status: 'success',
-        quality: translatedName, 
-        confidence: `${(detectedObj.confidence * 100).toFixed(1)}%`, 
+        status: 'success', 
+        quality: `Đã phát hiện ${totalCount} bánh`, 
+        confidence: `${confidenceScore}%`, 
         dryness: 'N/A' 
       });
+
+      try {
+        const oldHistoryStr = await AsyncStorage.getItem('@scan_history');
+        const oldHistory = oldHistoryStr ? JSON.parse(oldHistoryStr) : [];
+
+        let finalImageUrl = sourceImage; 
+
+        if (response.image) {
+          if (response.image.startsWith('data:image')) {
+            finalImageUrl = response.image;
+          } else {
+            finalImageUrl = `data:image/jpeg;base64,${response.image}`;
+          }
+        }
+
+        // Tạo bản ghi lược giản
+        const newRecord = {
+          id: `history-${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          location: activeTab === 'upload' ? 'Ảnh tải lên' : 'Quét Camera trực tiếp',
+          notes: `Ghi nhận thành công ${totalCount} bánh tráng trong khung hình.`,
+          ai_data: {
+            is_detected: true,
+            total_objects: totalCount,
+            confidence: confidenceScore,
+            image_url: finalImageUrl 
+          }
+        };
+
+        await AsyncStorage.setItem('@scan_history', JSON.stringify([newRecord, ...oldHistory]));
+      } catch (storageError) {
+        console.error("Lỗi khi lưu lịch sử vào AsyncStorage:", storageError);
+      }
+
     } else {
       setScanResult({
         status: 'empty',

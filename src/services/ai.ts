@@ -1,17 +1,23 @@
 import { Platform } from 'react-native';
-import { apiClient } from './api';
+import axios from 'axios';
+// (Không import apiClient nữa vì file này chuyên làm việc với Server AI)
+
+// 🚀 ĐỊNH NGHĨA LINK SERVER AI (HUGGING FACE)
+// Dùng biến môi trường chuẩn của Expo
+const AI_URL = process.env.EXPO_PUBLIC_API_URL || 'https://huntrot-mylongai-backed-modelai.hf.space';
 
 export const aiService = {
   // ==============================
-  // 1. KIỂM TRA TRẠNG THÁI SERVER
+  // 1. KIỂM TRA TRẠNG THÁI SERVER AI
   // Endpoint: GET /health
   // ==============================
   checkHealth: async () => {
     try {
-      const response = await apiClient.get('/health');
+      // Gọi thẳng vào AI_URL
+      const response = await axios.get(`${AI_URL}/health`);
       return response.data;
     } catch (error) {
-      console.error('Lỗi khi kiểm tra Health Check:', error);
+      console.error('Lỗi khi kiểm tra Health Check AI:', error);
       throw error;
     }
   },
@@ -38,10 +44,8 @@ export const aiService = {
         type: type 
       } as any);
 
-      // Dùng fetch thay vì Axios cho FormData trên Mobile để chống lỗi Network Error
-      const apiUrl = `${process.env.EXPO_PUBLIC_API_URL}/ai/detect`;
-      
-      const response = await fetch(apiUrl, {
+      // 🚀 Dùng fetch kết hợp AI_URL
+      const response = await fetch(`${AI_URL}/ai/detect`, {
         method: 'POST',
         body: formData,
         // TUYỆT ĐỐI KHÔNG tự set Content-Type ở đây, để fetch tự sinh ra Boundary chuẩn
@@ -51,7 +55,7 @@ export const aiService = {
       });
 
       if (!response.ok) {
-        throw new Error(`Lỗi máy chủ: ${response.status}`);
+        throw new Error(`Lỗi máy chủ AI: ${response.status}`);
       }
 
       const data = await response.json();
@@ -76,8 +80,8 @@ export const aiService = {
         image: pureBase64
       };
 
-      // Gọi bằng Axios bình thường vì gửi JSON rất an toàn
-      const response = await apiClient.post('/ai/detect-realtime', payload);
+      // 🚀 Dùng axios gọi thẳng vào AI_URL thay vì apiClient
+      const response = await axios.post(`${AI_URL}/ai/detect-realtime`, payload);
 
       return response.data; 
     } catch (error) {
@@ -97,7 +101,8 @@ export const aiService = {
         avg_humidity: avgHumidity
       };
 
-      const response = await apiClient.post('/drying/predict', payload);
+      // 🚀 Tương tự, gọi lên server AI
+      const response = await axios.post(`${AI_URL}/drying/predict`, payload);
       
       // Sẽ trả về { predicted_drying_time: ... }
       return response.data;

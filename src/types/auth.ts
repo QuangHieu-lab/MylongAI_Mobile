@@ -1,10 +1,12 @@
 // src/types/auth.ts
 
 export interface User {
-  id?: string;
-  name?: string;
+  id: string; // Đã bỏ dấu ? vì user sau khi login luôn có ID
+  name: string;
   email: string;
-  role?: string;
+  role: 'customer' | 'premium' | 'admin' | 'disabled'; 
+  premium_expired_at?: string | null; // Cần thiết để check gói Premium
+  created_at?: string;
   [key: string]: any; 
 }
 
@@ -14,10 +16,15 @@ export interface AuthContextType {
   login: (email: string, pass: string) => Promise<void>;
   register: (name: string, email: string, pass: string) => Promise<void>;
   logout: () => Promise<void>;
+  // 🚀 Hàm quan trọng để cập nhật lại quyền user sau khi thanh toán thành công
+  refetchUser: () => Promise<void>; 
 }
 
-// Bạn có thể định nghĩa thêm cấu trúc dữ liệu trả về từ API ở đây
+// Cấu trúc chuẩn theo API Backend /auth/login
 export interface LoginResponse {
-  token: string;
-  user: User;
+  access_token: string; // Đúng tên trường từ Backend
+  token_type: string;
+  user_id: string;
+  name: string;
+  role: 'customer' | 'premium' | 'admin' | 'disabled';
 }

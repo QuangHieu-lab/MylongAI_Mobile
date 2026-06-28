@@ -1,11 +1,11 @@
-// useAuthForm.ts
+// src/hooks/useAuthForm.ts
 import { useState } from 'react';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { AUTH_MESSAGES } from '@/src/constants/messages';
 import { toast } from '@/src/lib/toast';
 
 export const useAuthForm = () => {
-  const { login, register } = useAuth(); // 👈 Lấy thẳng hàm register từ Context
+  const { login, register } = useAuth(); 
   
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [isLoading, setIsLoading] = useState(false);
@@ -30,8 +30,13 @@ export const useAuthForm = () => {
       await login(loginEmail, loginPassword);
       toast.success('Thành công', AUTH_MESSAGES.SUCCESS_LOGIN); 
     } catch (error: any) {
-      // 🚀 Lấy thông báo lỗi từ Context ném ra để hiển thị
-      toast.error('Lỗi đăng nhập', error.message || AUTH_MESSAGES.ERR_LOGIN_FAIL);
+      // 🚀 Bóc tách lỗi từ Axios (FastAPI thường trả lỗi trong trường 'detail')
+      const errorMessage = error.response?.data?.detail 
+                        || error.response?.data?.message 
+                        || error.message 
+                        || AUTH_MESSAGES.ERR_LOGIN_FAIL;
+      
+      toast.error('Lỗi đăng nhập', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -52,8 +57,13 @@ export const useAuthForm = () => {
       setRegisterPassword('');
       setActiveTab('login');
     } catch (error: any) {
-      // 🚀 Lấy thông báo lỗi trùng email từ Context
-      toast.error('Lỗi đăng ký', error.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+      // 🚀 Bóc tách lỗi trùng email từ Backend
+      const errorMessage = error.response?.data?.detail 
+                        || error.response?.data?.message 
+                        || error.message 
+                        || 'Đăng ký thất bại. Vui lòng thử lại.';
+                        
+      toast.error('Lỗi đăng ký', errorMessage);
     } finally {
       setIsLoading(false);
     }
