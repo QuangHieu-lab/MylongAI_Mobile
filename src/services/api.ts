@@ -7,7 +7,7 @@ const BASE_URL = process.env.EXPO_PUBLIC_MAIN_API_URL || 'https://mylongaiv2.onr
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
-  timeout: 15000, // Giữ nguyên 15s để tránh timeout khi mạng yếu
+  timeout: 60000, // Giữ nguyên 15s để tránh timeout khi mạng yếu
 });
 
 // 🚀 2. THÊM INTERCEPTOR: TỰ ĐỘNG ĐÍNH KÈM TOKEN
