@@ -1,9 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator'; 
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
-import { aiService } from '@/src/services/ai'; // 🚀 Nhớ check đúng tên file aiService
+import * as FileSystem from 'expo-file-system/legacy';
+import { Room, RoomEvent } from 'livekit-client'; // 🚀 IMPORT THƯ VIỆN LIVEKIT VỪA CÀI
+
+import { aiService } from '@/src/services/ai'; 
 import { toast } from '@/src/lib/toast'; 
+import { apiClient } from '@/src/services/api'; 
+
+// Từ điển ánh xạ nhãn hệ thống mylongAI
+const CLASS_NAMES: Record<number, string> = {
+  0: "Bánh tráng mè đen",
+  1: "Bánh tráng sữa",
+  2: "Bánh tráng rách (Lỗi)",
+};
 
 export const useYoloVision = () => {
   const [activeTab, setActiveTab] = useState<'realtime' | 'upload'>('upload');
@@ -12,9 +23,78 @@ export const useYoloVision = () => {
   
   const [isAnalyzing, setIsAnalyzing] = useState(false); 
   const [scanResult, setScanResult] = useState<any>(null); 
+  
+  // LẤY SẴN ID CAMERA TRONG DATABASE
+  const [selectedDbCamera, setSelectedDbCamera] = useState<string>('');
+
+  // 🚀 STATE QUẢN LÝ LIVEKIT
+  const [room, setRoom] = useState<Room | null>(null);
+  const [isLiveKitConnected, setIsLiveKitConnected] = useState(false);
+
+  useEffect(() => {
+    const getDatabaseCameras = async () => {
+      try {
+        const res: any = await apiClient.get('/camera');
+        const data = res?.data || res || [];
+        if (Array.isArray(data) && data.length > 0) {
+          setSelectedDbCamera(data[0].id);
+        }
+      } catch (err) {
+        console.warn("Không thể tải danh sách Camera:", err);
+      }
+    };
+    getDatabaseCameras();
+
+    // Dọn dẹp kết nối LiveKit khi component bị unmount
+    return () => {
+      if (room) {
+        room.disconnect();
+      }
+    };
+  }, []);
+
+  // 🚀 HÀM KẾT NỐI VÀO LUỒNG CAMERA CỦA LIVEKIT
+  const connectToLiveKit = async (wsUrl: string, token: string) => {
+    try {
+      const newRoom = new Room();
+      
+      // Lắng nghe sự kiện ngắt kết nối để cập nhật lại UI
+      newRoom.on(RoomEvent.Disconnected, () => {
+        setIsLiveKitConnected(false);
+        setRoom(null);
+        setIsCameraActive(false);
+      });
+
+      await newRoom.connect(wsUrl, token);
+      setRoom(newRoom);
+      setIsLiveKitConnected(true);
+      setIsCameraActive(true);
+      
+      toast.success("Đã kết nối", "Luồng Camera đã sẵn sàng!");
+    } catch (error) {
+      console.error("Lỗi kết nối LiveKit:", error);
+      toast.error("Lỗi Camera", "Không thể kết nối đến máy chủ LiveKit.");
+    }
+  };
+
+  // 🚀 HÀM NGẮT KẾT NỐI
+  const disconnectLiveKit = () => {
+    if (room) {
+      room.disconnect();
+    }
+    setIsLiveKitConnected(false);
+    setIsCameraActive(false);
+    setScanResult(null);
+  };
 
   const toggleCamera = () => {
-    setIsCameraActive(!isCameraActive);
+    if (isCameraActive) {
+      disconnectLiveKit();
+    } else {
+      setIsCameraActive(true);
+      // Lưu ý: Việc gọi connectToLiveKit sẽ được thực hiện ở UI component 
+      // khi bạn đã lấy được URL và Token từ backend.
+    }
     setScanResult(null); 
   };
 
@@ -61,13 +141,17 @@ export const useYoloVision = () => {
       setIsAnalyzing(true);
       setScanResult(null);
       
-      const response = await aiService.detectRicePaper(selectedImage);
+      const base64String = await FileSystem.readAsStringAsync(selectedImage, {
+        encoding: 'base64', //  Chỉ cần sửa thành chuỗi chữ thường như thế này
+      });
+
+      const response = await aiService.detectRealtime(base64String);
       await processAiResponse(response, selectedImage); 
       
-      toast.success("Thành công", "Đã phân tích và lưu vào Lịch sử!");
+      toast.success("Thành công", "Đã phân tích và lưu kết quả!");
     } catch (error: any) {
-      console.error("Lỗi API Tải ảnh:", error);
-      toast.error("Mất kết nối", "Không thể gửi ảnh đến Máy chủ AI.");
+      console.error("Lỗi API Phân tích:", error);
+      toast.error("Lỗi kết nối", "Không thể phân tích ảnh lúc này.");
     } finally {
       setIsAnalyzing(false); 
     }
@@ -83,10 +167,10 @@ export const useYoloVision = () => {
       const response = await aiService.detectRealtime(base64String);
       await processAiResponse(response, base64String); 
 
-      toast.success("Hoàn tất", "Đã quét, phân tích và lưu kết quả!");
+      toast.success("Hoàn tất", "Đã quét và lưu kết quả!");
     } catch (error) {
       console.error("Lỗi API Camera thủ công:", error);
-      toast.error("Lỗi phân tích", "Không thể phân tích ảnh chụp. Vui lòng thử lại.");
+      toast.error("Lỗi phân tích", "Không thể phân tích ảnh chụp.");
     } finally {
       setIsAnalyzing(false); 
     }
@@ -96,7 +180,6 @@ export const useYoloVision = () => {
     if (response && response.objects && response.objects.length > 0) {
       const rawObjects = response.objects;
       
-      // 🚀 Lọc bỏ nhiễu (< 40%) và tính Trung bình Độ tin cậy (GIỐNG BẢN WEB)
       const validObjects = rawObjects.filter((d: any) => d.confidence >= 0.4);
       const totalCount = validObjects.length;
 
@@ -105,24 +188,41 @@ export const useYoloVision = () => {
         const totalConf = validObjects.reduce((sum: number, d: any) => sum + d.confidence, 0);
         confidenceScore = Math.round((totalConf / totalCount) * 100);
       } else {
-        // Nếu các vật thể đều < 40% (bị lọc hết)
         setScanResult({
           status: 'empty',
           quality: 'Khung hình trống hoặc nhiễu',
           confidence: '0%',
           dryness: 'N/A'
         });
-        toast.info("Cảnh báo", "AI phát hiện vật thể nhưng độ tin cậy quá thấp.");
+        toast.info("Cảnh báo", "Vật thể phát hiện có độ tin cậy quá thấp.");
         return;
       }
 
-      // Cập nhật UI quét
+      const mappedDetections = validObjects.map((d: any) => ({
+        label: d.label ?? (CLASS_NAMES[d.class] ?? `Lỗi nhãn (${d.class})`),
+        confidence: d.confidence
+      }));
+
       setScanResult({
         status: 'success', 
         quality: `Đã phát hiện ${totalCount} bánh`, 
         confidence: `${confidenceScore}%`, 
-        dryness: 'N/A' 
+        dryness: 'N/A',
+        count: totalCount,
+        detections: mappedDetections 
       });
+
+      if (selectedDbCamera) {
+        try {
+          await apiClient.post('/iot/detection-result', {
+            camera_id: selectedDbCamera,
+            detected_count: totalCount,
+            confidence: (confidenceScore / 100) 
+          });
+        } catch (dbErr) {
+          console.error("Lỗi lưu Database Detection Upload:", dbErr);
+        }
+      }
 
       try {
         const oldHistoryStr = await AsyncStorage.getItem('@scan_history');
@@ -138,7 +238,6 @@ export const useYoloVision = () => {
           }
         }
 
-        // Tạo bản ghi lược giản
         const newRecord = {
           id: `history-${Date.now()}`,
           timestamp: new Date().toISOString(),
@@ -179,6 +278,10 @@ export const useYoloVision = () => {
     selectedImage, 
     isAnalyzing, 
     scanResult,
+    room, // Xuất room ra để UI lấy VideoTrack
+    isLiveKitConnected, // Trạng thái để UI hiển thị "Đang kết nối..."
+    connectToLiveKit,
+    disconnectLiveKit,
     toggleCamera, 
     handlePickImage, 
     handleAnalyzeImage, 

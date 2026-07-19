@@ -3,12 +3,12 @@ import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera, Upload, Image as ImageIcon, BrainCircuit, AlertCircle, ChevronLeft, MapPin } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { useYoloVision } from '@/src/hooks/useYoloVision'; // 👈 Import Hook của bạn
+
+import { useYoloVision } from '@/src/hooks/useYoloVision';
 
 export default function AiDetectScreen() {
   const router = useRouter();
   
-  // 🚀 Gọi Hook lấy các hàm cần thiết cho phần Upload
   const { 
     selectedImage, 
     isAnalyzing, 
@@ -18,26 +18,26 @@ export default function AiDetectScreen() {
     resetUpload 
   } = useYoloVision();
 
-  // Xác định bánh Đạt hay Lỗi để đổi màu UI
   const isDefect = scanResult?.quality?.includes('Lỗi') || scanResult?.status === 'empty';
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0f172a]">
+    <SafeAreaView className="flex-1 bg-[#0f172a]" edges={['top']}>
       {/* ================= HEADER ================= */}
       <View className="px-6 py-4 flex-row items-center justify-between border-b border-slate-800">
         <View className="flex-row items-center gap-3">
-          <TouchableOpacity onPress={() => router.back()} className="p-2 bg-slate-800 rounded-full">
+          <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center border border-slate-700">
             <ChevronLeft size={24} color="#fff" />
           </TouchableOpacity>
           <Text className="text-white text-xl font-bold">Giám định Thủ công</Text>
         </View>
-        <View className="flex-row items-center gap-1 bg-slate-800 px-3 py-1.5 rounded-full">
+        <View className="flex-row items-center gap-1.5 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700/50">
           <MapPin size={12} color="#94a3b8" />
-          <Text className="text-slate-300 text-xs font-medium">Sân A</Text>
+          <Text className="text-slate-300 text-xs font-bold">Sân A</Text>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+        
         {/* ================= THANH TABS CHUYỂN ĐỔI ================= */}
         <View className="flex-row bg-[#1e293b] p-1.5 rounded-2xl mb-6 border border-slate-800">
           <TouchableOpacity 
@@ -54,70 +54,67 @@ export default function AiDetectScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ================= KHU VỰC TẢI ẢNH LÊN ================= */}
+      {/* ================= KHU VỰC TẢI ẢNH LÊN ================= */}
         <View className="flex-col gap-5">
           <TouchableOpacity 
             onPress={handlePickImage}
             activeOpacity={0.8}
-            className="w-full aspect-[4/3] bg-[#1e293b] rounded-[32px] border-2 border-dashed border-slate-700 justify-center items-center overflow-hidden"
+            // Bỏ class aspect-[4/3] đi và dùng style gốc của React Native để khóa tỷ lệ
+            style={{ aspectRatio: 4 / 3 }} 
+            className={`w-full bg-[#1e293b] rounded-[32px] border-2 border-dashed justify-center items-center overflow-hidden transition-all duration-300 ${
+              selectedImage ? 'border-blue-500/50' : 'border-slate-700'
+            }`}
           >
             {selectedImage ? (
-              <Image source={{ uri: selectedImage }} className="w-full h-full" resizeMode="cover" />
+              <Image 
+                source={{ uri: selectedImage }} 
+                // Ép kích thước ảnh bằng style gốc để đảm bảo nó luôn nằm vừa vặn
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="cover" 
+              />
             ) : (
               <View className="items-center">
-                <View className="w-16 h-16 bg-slate-800 rounded-full items-center justify-center mb-4">
-                  <ImageIcon size={32} color="#475569" />
+                <View className="w-16 h-16 bg-slate-800 rounded-full items-center justify-center mb-4 border border-slate-700/50 shadow-sm">
+                  <ImageIcon size={32} color="#64748b" />
                 </View>
                 <Text className="text-slate-300 font-bold text-base">Bấm để chọn ảnh</Text>
-                <Text className="text-slate-500 mt-1 text-xs">JPG, PNG (Tối đa 5MB)</Text>
+                <Text className="text-slate-500 mt-1 text-xs">Hỗ trợ JPG, PNG (Tối đa 5MB)</Text>
               </View>
             )}
           </TouchableOpacity>
 
-          {/* Nút gửi ảnh để phân tích */}
-          {selectedImage && !scanResult && (
-            <TouchableOpacity 
-              onPress={handleAnalyzeImage}
-              disabled={isAnalyzing}
-              className={`w-full py-4 rounded-2xl flex-row justify-center items-center gap-2 shadow-lg mt-2 ${
-                isAnalyzing ? 'bg-blue-500/50 border border-blue-500/30' : 'bg-blue-600'
-              }`}
-            >
-              {isAnalyzing ? (
-                <><ActivityIndicator color="#fff" size="small" /><Text className="text-white font-bold text-lg">AI đang phân tích...</Text></>
-              ) : (
-                <><BrainCircuit size={20} color="#fff" /><Text className="text-white font-bold text-lg">Phân tích ngay</Text></>
-              )}
-            </TouchableOpacity>
-          )}
-
           {/* ================= KHUNG KẾT QUẢ AI TRẢ VỀ ================= */}
           {scanResult && (
-            <View className={`rounded-3xl p-5 border mt-4 ${
-              !isDefect ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'
+            <View className={`rounded-3xl p-5 border mt-4 shadow-lg ${
+              !isDefect ? 'bg-emerald-950/80 border-emerald-500/40' : 'bg-rose-950/80 border-rose-500/40'
             }`}>
-              <View className="flex-row items-center gap-2 mb-4 border-b border-slate-700/50 pb-3">
-                {!isDefect ? <BrainCircuit size={20} color="#34d399" /> : <AlertCircle size={20} color="#fb7185" />}
-                <Text className="text-white font-bold text-lg">Kết quả giám định AI</Text>
+              <View className="flex-row items-center gap-2 mb-4 border-b border-slate-700/50 pb-4">
+                <View className={`p-2 rounded-xl ${!isDefect ? 'bg-emerald-500/20' : 'bg-rose-500/20'}`}>
+                  {!isDefect ? <BrainCircuit size={20} color="#34d399" /> : <AlertCircle size={20} color="#fb7185" />}
+                </View>
+                <Text className="text-white font-bold text-lg tracking-tight">Kết quả giám định AI</Text>
               </View>
               
-              <View className="flex-row justify-between items-center mb-3">
+              <View className="flex-row justify-between items-center mb-4">
                 <Text className="text-slate-400 font-medium">Chẩn đoán:</Text>
-                <Text className={`font-bold text-base ${!isDefect ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <Text className={`font-black text-lg uppercase tracking-wider ${!isDefect ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {scanResult.quality}
                 </Text>
               </View>
               
               <View className="flex-row justify-between items-center mb-3">
                 <Text className="text-slate-400 font-medium">Độ tin cậy YOLOv8:</Text>
-                <View className="bg-slate-800/80 px-2.5 py-1 rounded-lg">
+                <View className="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/50">
                   <Text className="text-white font-bold">{scanResult.confidence}</Text>
                 </View>
               </View>
 
-              <TouchableOpacity onPress={resetUpload} className="mt-6 py-3.5 bg-[#1e293b] border border-slate-700 rounded-xl items-center flex-row justify-center gap-2">
-                <ImageIcon size={16} color="#94a3b8" />
-                <Text className="text-slate-300 font-semibold">Chọn ảnh khác</Text>
+              <TouchableOpacity 
+                onPress={resetUpload} 
+                className="mt-6 py-4 bg-[#0f172a] border border-slate-700 rounded-2xl items-center flex-row justify-center gap-2 shadow-inner"
+              >
+                <ImageIcon size={18} color="#94a3b8" />
+                <Text className="text-slate-300 font-bold">Chọn ảnh khác</Text>
               </TouchableOpacity>
             </View>
           )}
