@@ -1,4 +1,5 @@
-
+import { registerGlobals } from '@livekit/react-native';
+registerGlobals();
 import '@/global.css';
 import { useEffect } from 'react';
 import { View, Text } from 'react-native';
