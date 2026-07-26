@@ -1,3 +1,4 @@
+/*
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -44,7 +45,7 @@ export default function AnalyticsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#0f172a]" edges={['top']}>
       
-      {/* ================= HEADER ================= */}
+      {/* ================= HEADER ================= }
       <View className="flex-row items-center justify-between px-6 py-4 border-b border-slate-800/50">
         <View className="flex-row items-center gap-3">
           <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 bg-[#1e293b] rounded-full flex items-center justify-center border border-slate-700">
@@ -60,7 +61,7 @@ export default function AnalyticsScreen() {
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
         
-        {/* ================= CHỈ SỐ TỔNG QUAN (KEY METRICS) ================= */}
+        {/* ================= CHỈ SỐ TỔNG QUAN (KEY METRICS) ================= }
         <View className="flex-row flex-wrap justify-between gap-y-4 mb-6">
           <View className="w-[48%] bg-[#1e293b] p-4 rounded-[24px] border border-slate-700/50 shadow-lg">
             <View className="w-10 h-10 bg-blue-500/10 rounded-xl items-center justify-center mb-3">
@@ -111,7 +112,7 @@ export default function AnalyticsScreen() {
           </View>
         </View>
 
-        {/* ================= THANH ĐIỀU HƯỚNG TABS ================= */}
+        {/* ================= THANH ĐIỀU HƯỚNG TABS ================= }
         <View className="flex-row bg-[#0f172a] p-1 rounded-2xl border border-slate-800 mb-6">
           <TouchableOpacity 
             onPress={() => setActiveTab('overview')}
@@ -139,13 +140,13 @@ export default function AnalyticsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ================= NỘI DUNG TỪNG TAB ================= */}
+        {/* ================= NỘI DUNG TỪNG TAB ================= }
         
-        {/* TAB 1: TỔNG QUAN */}
+        {/* TAB 1: TỔNG QUAN }
         {activeTab === 'overview' && (
           <View className="space-y-6">
             
-            {/* Phân bố trạng thái */}
+            {/* Phân bố trạng thái }
             <View className="bg-[#1e293b] p-5 rounded-3xl border border-slate-700/50 shadow-lg">
               <View className="flex-row items-center gap-2 mb-6">
                 <PieChart size={18} color="#c084fc" />
@@ -185,7 +186,7 @@ export default function AnalyticsScreen() {
               </View>
             </View>
 
-            {/* Số lượng batch theo ngày */}
+            {/* Số lượng batch theo ngày }
             <View className="bg-[#1e293b] p-5 rounded-3xl border border-slate-700/50 shadow-lg">
               <View className="flex-row items-center gap-2 mb-6">
                 <BarChart3 size={18} color="#38bdf8" />
@@ -230,7 +231,7 @@ export default function AnalyticsScreen() {
           </View>
         )}
 
-        {/* TAB 2: TIẾN ĐỘ */}
+        {/* TAB 2: TIẾN ĐỘ }
         {activeTab === 'progress' && (
           <View className="space-y-4">
             <View className="bg-blue-500/10 p-5 rounded-3xl border border-blue-500/20 shadow-lg mb-2">
@@ -283,7 +284,7 @@ export default function AnalyticsScreen() {
           </View>
         )}
 
-        {/* TAB 3: HIỆU SUẤT */}
+        {/* TAB 3: HIỆU SUẤT }
         {activeTab === 'performance' && (
           <View className="space-y-6">
             <View className="bg-[#1e293b] p-5 rounded-3xl border border-slate-700/50 shadow-lg">
@@ -324,4 +325,4 @@ export default function AnalyticsScreen() {
       </ScrollView>
     </SafeAreaView>
   );
-}
+} */

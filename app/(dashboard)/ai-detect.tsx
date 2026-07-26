@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Camera, Upload, Image as ImageIcon, BrainCircuit, AlertCircle, ChevronLeft, MapPin } from 'lucide-react-native';
+import { Camera, Upload, Image as ImageIcon, AlertCircle, ChevronLeft, MapPin, CheckCircle2, Sparkles } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
 import { useYoloVision } from '@/src/hooks/useYoloVision';
@@ -18,7 +18,8 @@ export default function AiDetectScreen() {
     resetUpload 
   } = useYoloVision();
 
-  const isDefect = scanResult?.quality?.includes('Lỗi') || scanResult?.status === 'empty';
+  // 🚀 CHỈ KIỂM TRA XEM CÓ BÁNH HAY KHÔNG (KHÔNG CHECK LỖI NỮA)
+  const isSuccess = scanResult?.status === 'success';
 
   return (
     <SafeAreaView className="flex-1 bg-[#0f172a]" edges={['top']}>
@@ -32,7 +33,7 @@ export default function AiDetectScreen() {
         </View>
         <View className="flex-row items-center gap-1.5 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700/50">
           <MapPin size={12} color="#94a3b8" />
-          <Text className="text-slate-300 text-xs font-bold">Sân A</Text>
+          <Text className="text-slate-300 text-xs font-bold">Tải ảnh</Text>
         </View>
       </View>
 
@@ -54,12 +55,11 @@ export default function AiDetectScreen() {
           </TouchableOpacity>
         </View>
 
-      {/* ================= KHU VỰC TẢI ẢNH LÊN ================= */}
+        {/* ================= KHU VỰC TẢI ẢNH LÊN ================= */}
         <View className="flex-col gap-5">
           <TouchableOpacity 
             onPress={handlePickImage}
             activeOpacity={0.8}
-            // Bỏ class aspect-[4/3] đi và dùng style gốc của React Native để khóa tỷ lệ
             style={{ aspectRatio: 4 / 3 }} 
             className={`w-full bg-[#1e293b] rounded-[32px] border-2 border-dashed justify-center items-center overflow-hidden transition-all duration-300 ${
               selectedImage ? 'border-blue-500/50' : 'border-slate-700'
@@ -68,9 +68,8 @@ export default function AiDetectScreen() {
             {selectedImage ? (
               <Image 
                 source={{ uri: selectedImage }} 
-                // Ép kích thước ảnh bằng style gốc để đảm bảo nó luôn nằm vừa vặn
                 style={{ width: '100%', height: '100%' }}
-                resizeMode="cover" 
+                resizeMode="contain" 
               />
             ) : (
               <View className="items-center">
@@ -83,28 +82,48 @@ export default function AiDetectScreen() {
             )}
           </TouchableOpacity>
 
+          {/* ================= 🚀 NÚT BẤM GỌI API PHÂN TÍCH (Đã fix lỗi bị thiếu) ================= */}
+          {selectedImage && !scanResult && (
+            <TouchableOpacity 
+              onPress={handleAnalyzeImage}
+              disabled={isAnalyzing}
+              className={`w-full py-4 rounded-2xl flex-row items-center justify-center gap-2 shadow-lg ${
+                isAnalyzing ? 'bg-slate-700' : 'bg-blue-600'
+              }`}
+            >
+              {isAnalyzing ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Sparkles size={20} color="#fff" />
+              )}
+              <Text className="text-white font-bold text-lg">
+                {isAnalyzing ? 'Hệ thống đang phân tích...' : 'Bắt đầu giám định AI'}
+              </Text>
+            </TouchableOpacity>
+          )}
+
           {/* ================= KHUNG KẾT QUẢ AI TRẢ VỀ ================= */}
-          {scanResult && (
-            <View className={`rounded-3xl p-5 border mt-4 shadow-lg ${
-              !isDefect ? 'bg-emerald-950/80 border-emerald-500/40' : 'bg-rose-950/80 border-rose-500/40'
+          {!isAnalyzing && scanResult && (
+            <View className={`rounded-[24px] p-5 border mt-2 shadow-lg ${
+              isSuccess ? 'bg-emerald-950/80 border-emerald-500/40' : 'bg-amber-950/80 border-amber-500/40'
             }`}>
-              <View className="flex-row items-center gap-2 mb-4 border-b border-slate-700/50 pb-4">
-                <View className={`p-2 rounded-xl ${!isDefect ? 'bg-emerald-500/20' : 'bg-rose-500/20'}`}>
-                  {!isDefect ? <BrainCircuit size={20} color="#34d399" /> : <AlertCircle size={20} color="#fb7185" />}
+              <View className="flex-row items-center gap-3 mb-4 border-b border-white/10 pb-4">
+                <View className={`p-2 rounded-xl ${isSuccess ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}>
+                  {isSuccess ? <CheckCircle2 size={24} color="#34d399" /> : <AlertCircle size={24} color="#fbbf24" />}
                 </View>
-                <Text className="text-white font-bold text-lg tracking-tight">Kết quả giám định AI</Text>
+                <Text className="text-white font-bold text-xl tracking-tight flex-1">Kết quả giám định</Text>
               </View>
               
               <View className="flex-row justify-between items-center mb-4">
-                <Text className="text-slate-400 font-medium">Chẩn đoán:</Text>
-                <Text className={`font-black text-lg uppercase tracking-wider ${!isDefect ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <Text className="text-slate-300 font-medium">Phát hiện:</Text>
+                <Text className={`font-black text-xl uppercase tracking-wider ${isSuccess ? 'text-emerald-400' : 'text-amber-400'}`}>
                   {scanResult.quality}
                 </Text>
               </View>
               
-              <View className="flex-row justify-between items-center mb-3">
-                <Text className="text-slate-400 font-medium">Độ tin cậy YOLOv8:</Text>
-                <View className="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/50">
+              <View className="flex-row justify-between items-center mb-2">
+                <Text className="text-slate-300 font-medium">Độ tin cậy YOLOv8:</Text>
+                <View className="bg-black/30 px-3 py-1.5 rounded-lg border border-white/5">
                   <Text className="text-white font-bold">{scanResult.confidence}</Text>
                 </View>
               </View>
@@ -114,7 +133,7 @@ export default function AiDetectScreen() {
                 className="mt-6 py-4 bg-[#0f172a] border border-slate-700 rounded-2xl items-center flex-row justify-center gap-2 shadow-inner"
               >
                 <ImageIcon size={18} color="#94a3b8" />
-                <Text className="text-slate-300 font-bold">Chọn ảnh khác</Text>
+                <Text className="text-slate-300 font-bold text-base">Chọn ảnh khác</Text>
               </TouchableOpacity>
             </View>
           )}

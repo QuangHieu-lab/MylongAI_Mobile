@@ -1,3 +1,4 @@
+/*
 import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Dimensions, RefreshControl, Image, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -80,7 +81,7 @@ export default function HistoryScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#0f172a]" edges={['top']}>
       
-      {/* Header */}
+      {/* Header }
       <View className="flex-row items-center justify-between px-6 py-4">
         <View className="flex-row items-center gap-3">
           <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 bg-[#1e293b] rounded-full flex items-center justify-center border border-slate-700">
@@ -92,7 +93,7 @@ export default function HistoryScreen() {
           </View>
         </View>
         
-        {/* Nút Clear dữ liệu để test */}
+        {/* Nút Clear dữ liệu để test }
         {historyList.length > 0 && (
           <TouchableOpacity onPress={clearHistory} className="bg-rose-500/10 px-3 py-1.5 rounded-lg border border-rose-500/30">
             <Text className="text-rose-400 text-xs font-bold">Xóa lịch sử</Text>
@@ -111,7 +112,7 @@ export default function HistoryScreen() {
           onRetry={fetchHistoryData}
           loadingMessage="Đang tải dữ liệu lịch sử..."
         >
-          {/* Summary */}
+          {/* Summary }
           {historyList.length > 0 && (
             <View className="flex-row justify-between items-center mb-6">
               <View className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 flex-1 mr-2">
@@ -134,7 +135,7 @@ export default function HistoryScreen() {
             </View>
           )}
 
-          {/* Danh sách History */}
+          {/* Danh sách History }
           <View className="space-y-5">
             {historyList.map((record) => {
               const dateObj = new Date(record.timestamp);
@@ -145,7 +146,7 @@ export default function HistoryScreen() {
               return (
                 <View key={record.id} className="bg-[#1e293b] rounded-3xl border border-slate-700 shadow-lg overflow-hidden">
                   
-                  {/* PHẦN HÌNH ẢNH AI */}
+                  {/* PHẦN HÌNH ẢNH AI }
                   {aiData.is_detected ? (
                     <TouchableOpacity 
                       activeOpacity={0.9}
@@ -190,14 +191,14 @@ export default function HistoryScreen() {
                     </View>
                   )}
 
-                  {/* THÔNG TIN & NHÃN "BÁNH ĐẠT CHUẨN" */}
+                  {/* THÔNG TIN & NHÃN "BÁNH ĐẠT CHUẨN" }
                   <View className="p-5">
                     <View className="flex-row items-start justify-between">
                       <View>
                         <Text className="text-white text-lg font-bold mb-1">Mã mẻ: {String(record.id).split('-').pop()}</Text>
                         <Text className="text-slate-400 text-xs">Ghi nhận: {timeString} tại {record.location}</Text>
                         
-                        {/* 🚀 TAG BÁNH ĐẠT CHUẨN ĐƯỢC THÊM VÀO ĐÂY */}
+                        {/* 🚀 TAG BÁNH ĐẠT CHUẨN ĐƯỢC THÊM VÀO ĐÂY }
                         {aiData.is_detected && (
                           <View className="flex-row mt-3">
                             <View className="bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/30 flex-row items-center gap-1.5">
@@ -218,7 +219,7 @@ export default function HistoryScreen() {
         </DataWrapper>
       </ScrollView>
 
-      {/* Modal Fullscreen Ảnh */}
+      {/* Modal Fullscreen Ảnh }
       <Modal visible={!!selectedImage} transparent={true} animationType="fade">
         <View className="flex-1 bg-black/95 justify-center items-center">
           <TouchableOpacity 
@@ -241,4 +242,5 @@ export default function HistoryScreen() {
 
     </SafeAreaView>
   );
-}
+} 
+  */

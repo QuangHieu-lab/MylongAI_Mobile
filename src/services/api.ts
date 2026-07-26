@@ -42,6 +42,12 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export const authApi = {
+  login: (data: any) => apiClient.post('/auth/login', data),
+  register: (data: any) => apiClient.post('/auth/register', data),
+  getMe: () => apiClient.get('/auth/profile'),
+};
 // --- CAMERA MANAGEMENT ---
 export const cameraApi = {
   create: (data: any) => apiClient.post('/camera', data),

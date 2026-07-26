@@ -1,3 +1,4 @@
+/*
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -33,7 +34,7 @@ export default function CameraMonitoringScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#0f172a]" edges={['top']}>
       
-      {/* ================= HEADER ================= */}
+
       <View className="flex-row items-center justify-between px-6 py-4 border-b border-slate-800/50">
         <View className="flex-row items-center gap-3">
           <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 bg-[#1e293b] rounded-full flex items-center justify-center border border-slate-700">
@@ -49,7 +50,6 @@ export default function CameraMonitoringScreen() {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
         
-        {/* ================= THANH CHỌN CAMERA ================= */}
         <View className="py-4 border-b border-slate-800/50">
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-6">
             <View className="flex-row gap-3 pr-12">
@@ -78,13 +78,13 @@ export default function CameraMonitoringScreen() {
 
         {selectedCam && (
           <>
-            {/* ================= MÀN HÌNH LUỒNG VIDEO (LIVE FEED) ================= */}
+        
             <View className="px-6 py-6">
               <View className="bg-[#1e293b] rounded-[32px] overflow-hidden border border-slate-700/50 shadow-2xl relative">
                 
                 {selectedCam.status === 'online' ? (
                   <View className="h-64 bg-slate-900 relative justify-center items-center">
-                    {/* Giả lập khung hình YOLO Bounding Box */}
+                   
                     {isPlaying && (
                       <>
                         <View className="absolute top-10 left-10 w-24 h-24 border-2 border-emerald-500 rounded bg-emerald-500/10" />
@@ -104,7 +104,7 @@ export default function CameraMonitoringScreen() {
                   </View>
                 )}
 
-                {/* Thanh điều khiển Video Overlay */}
+           
                 <View className="absolute top-4 left-4 flex-row items-center gap-2">
                   <View className="bg-rose-500/20 px-2.5 py-1 rounded-full border border-rose-500/30 flex-row items-center">
                     <View className="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5 animate-pulse" />
@@ -133,11 +133,10 @@ export default function CameraMonitoringScreen() {
               </View>
             </View>
 
-            {/* ================= THÔNG SỐ & CẢNH BÁO MÔI TRƯỜNG ================= */}
-            <View className="px-6 mb-6">
+         
               <View className="flex-row flex-wrap justify-between gap-y-4">
                 
-                {/* Card Trạng Thái */}
+                
                 <View className="w-[48%] bg-[#1e293b] p-4 rounded-3xl border border-slate-700/50">
                   <View className="flex-row items-center mb-3">
                     <Wifi size={16} color="#60a5fa" />
@@ -147,7 +146,7 @@ export default function CameraMonitoringScreen() {
                   <Text className="text-slate-500 text-[10px] font-mono">IP: 192.168.1.{selectedCam.id.replace(/\D/g, '')}</Text>
                 </View>
 
-                {/* Card Mẻ bánh đang theo dõi */}
+             
                 <View className="w-[48%] bg-[#1e293b] p-4 rounded-3xl border border-slate-700/50">
                   <View className="flex-row items-center mb-3">
                     <Camera size={16} color="#c084fc" />
@@ -157,7 +156,7 @@ export default function CameraMonitoringScreen() {
                   <Text className="text-purple-400 text-[10px] font-bold">YOLO Confidence 85%</Text>
                 </View>
 
-                {/* Môi trường (Nhiệt độ / Độ ẩm) - Fake live data */}
+            
                 <View className="w-full bg-[#1e293b] p-4 rounded-3xl border border-slate-700/50 flex-row justify-between items-center">
                   <View className="flex-row items-center gap-3">
                     <View className="w-10 h-10 bg-orange-500/10 rounded-full flex items-center justify-center border border-orange-500/20">
@@ -184,7 +183,7 @@ export default function CameraMonitoringScreen() {
               </View>
             </View>
 
-            {/* ================= NHẬT KÝ PHÁT HIỆN AI (Từ mockRiskAlerts) ================= */}
+           
             <View className="px-6">
               <Text className="text-white font-bold text-lg mb-4">Nhật ký AI phát hiện</Text>
               
@@ -221,3 +220,4 @@ export default function CameraMonitoringScreen() {
     </SafeAreaView>
   );
 }
+  */
