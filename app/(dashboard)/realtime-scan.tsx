@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, Scan, Camera, MapPin, BrainCircuit, AlertCircle, XCircle } from 'lucide-react-native';
+import { ChevronLeft, Scan, Camera, MapPin, AlertCircle, XCircle, CheckCircle2 } from 'lucide-react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 
 // Import Hook YOLO AI
@@ -18,8 +18,8 @@ export default function RealtimeScanScreen() {
   // 2. Lấy bộ xử lý AI từ Hook
   const { scanResult, isAnalyzing, handleManualCapture, resetUpload } = useYoloVision();
 
-  // 3. Phân tích kết quả (Đạt hay Lỗi)
-  const isDefect = scanResult?.quality?.includes('Lỗi') || scanResult?.status === 'empty';
+  // 3. Phân tích kết quả (Chỉ check Có bánh hay Khung hình trống)
+  const isSuccess = scanResult?.status === 'success';
 
   // ==============================
   // 🚀 HÀM CHỤP VÀ GỬI ẢNH LÊN AI (THỦ CÔNG)
@@ -66,9 +66,9 @@ export default function RealtimeScanScreen() {
   const getTargetColor = () => {
     if (isAnalyzing) return { border: 'border-sky-400', bg: 'bg-sky-400/10', text: 'text-sky-400' };
     if (scanResult) {
-      return isDefect 
-        ? { border: 'border-rose-500', bg: 'bg-rose-500/10', text: 'text-rose-400' }
-        : { border: 'border-emerald-400', bg: 'bg-emerald-400/10', text: 'text-emerald-400' };
+      return isSuccess 
+        ? { border: 'border-emerald-400', bg: 'bg-emerald-400/10', text: 'text-emerald-400' }
+        : { border: 'border-amber-500', bg: 'bg-amber-500/10', text: 'text-amber-400' };
     }
     return { border: 'border-white/50', bg: 'bg-white/5', text: 'text-white/70' }; // Mặc định
   };
@@ -119,7 +119,7 @@ export default function RealtimeScanScreen() {
             <View className={`absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 rounded-bl-[32px] ${targetStyle.border.replace('border-', 'border-b-').replace('border-', 'border-l-')}`} />
             <View className={`absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 rounded-br-[32px] ${targetStyle.border.replace('border-', 'border-b-').replace('border-', 'border-r-')}`} />
             
-            <Scan size={48} color={isAnalyzing ? "#38bdf8" : (scanResult ? (isDefect ? "#f43f5e" : "#34d399") : "#ffffff")} className={isAnalyzing || scanResult ? "opacity-100" : "opacity-30"} />
+            <Scan size={48} color={isAnalyzing ? "#38bdf8" : (scanResult ? (isSuccess ? "#34d399" : "#fbbf24") : "#ffffff")} className={isAnalyzing || scanResult ? "opacity-100" : "opacity-30"} />
             
             <Text className={`mt-6 font-bold text-xs tracking-widest uppercase px-4 text-center ${targetStyle.text}`}>
               {isAnalyzing ? 'Đang phân tích khung hình...' : (scanResult ? 'Hoàn tất đánh giá' : 'Căn bánh vào giữa khung')}
@@ -133,14 +133,14 @@ export default function RealtimeScanScreen() {
           {/* HIỂN THỊ KẾT QUẢ AI TRẢ VỀ */}
           {!isAnalyzing && scanResult && (
             <View className={`mb-6 p-4 rounded-3xl border backdrop-blur-xl relative overflow-hidden ${
-              !isDefect ? 'bg-emerald-950/80 border-emerald-500/50' : 'bg-rose-950/80 border-rose-500/50'
+              isSuccess ? 'bg-emerald-950/80 border-emerald-500/50' : 'bg-amber-950/80 border-amber-500/50'
             }`}>
               <View className="flex-row items-center gap-2 mb-2">
-                {!isDefect ? <BrainCircuit size={18} color="#34d399" /> : <AlertCircle size={18} color="#fb7185" />}
+                {isSuccess ? <CheckCircle2 size={18} color="#34d399" /> : <AlertCircle size={18} color="#fbbf24" />}
                 <Text className="text-white font-bold text-base">Kết quả AI</Text>
               </View>
               
-              <Text className={`font-bold text-xl mb-1 ${!isDefect ? 'text-emerald-400' : 'text-rose-400'}`}>
+              <Text className={`font-bold text-xl mb-1 ${isSuccess ? 'text-emerald-400' : 'text-amber-400'}`}>
                 {scanResult.quality}
               </Text>
               <Text className="text-slate-300 text-xs">
@@ -148,9 +148,9 @@ export default function RealtimeScanScreen() {
               </Text>
 
               {/* Nút tắt kết quả */}
-              <TouchableOpacity onPress={resetUpload}   className="absolute top-4 right-4 p-2">
-  <XCircle size={20} color="#cbd5e1" />
-</TouchableOpacity>
+              <TouchableOpacity onPress={resetUpload} className="absolute top-4 right-4 p-2">
+                <XCircle size={20} color="#cbd5e1" />
+              </TouchableOpacity>
             </View>
           )}
 

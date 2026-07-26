@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Home, Camera, Settings, BrainCircuit,CloudSun ,User } from 'lucide-react-native';
+import { Home, Camera, Settings, BrainCircuit,CloudSun ,User,Crown } from 'lucide-react-native';
 // 1. Thêm 2 thư viện này để xử lý Safe Area và nhận diện HĐH
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Platform } from 'react-native';
@@ -68,7 +68,13 @@ export default function DashboardLayout() {
           tabBarIcon: ({ color }) => <BrainCircuit size={24} color={color} />
         }} 
       />
-      
+      <Tabs.Screen 
+        name="premium" 
+        options={{ 
+          title: 'Premium',
+          tabBarIcon: ({ color }) => <Crown size={24} color={color} />
+        }} 
+      />
       {/* MÀN HÌNH ẨN: Quét Realtime */}
       <Tabs.Screen 
         name="realtime-scan" 

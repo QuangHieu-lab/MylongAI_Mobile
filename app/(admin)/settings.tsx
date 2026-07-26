@@ -1,3 +1,4 @@
+/*
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Switch, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -39,7 +40,7 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#0f172a]" edges={['top']}>
       
-      {/* ================= HEADER ================= */}
+      {/* ================= HEADER ================= }
       <View className="flex-row items-center justify-between px-6 py-4 border-b border-slate-800/50">
         <View className="flex-row items-center gap-3">
           <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 bg-[#1e293b] rounded-full flex items-center justify-center border border-slate-700">
@@ -54,7 +55,7 @@ export default function SettingsScreen() {
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
         
-        {/* ================= NÚT ACTION TỔNG ================= */}
+        {/* ================= NÚT ACTION TỔNG ================= }
         <View className="flex-row gap-3 mb-6">
           <TouchableOpacity 
             onPress={handleReset}
@@ -72,7 +73,7 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ================= THANH TABS NGANG ================= */}
+        {/* ================= THANH TABS NGANG ================= }
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-5 px-5 mb-6">
           <View className="flex-row gap-3 pr-10">
             <TouchableOpacity 
@@ -109,9 +110,9 @@ export default function SettingsScreen() {
           </View>
         </ScrollView>
 
-        {/* ================= NỘI DUNG TỪNG TAB ================= */}
+        {/* ================= NỘI DUNG TỪNG TAB ================= }
         
-        {/* TAB 1: CẤU HÌNH AI */}
+        {/* TAB 1: CẤU HÌNH AI }
         {activeTab === 'ai' && (
           <View className="space-y-4">
             
@@ -213,7 +214,7 @@ export default function SettingsScreen() {
           </View>
         )}
 
-        {/* TAB 2: CẢNH BÁO */}
+        {/* TAB 2: CẢNH BÁO }
         {activeTab === 'alerts' && (
           <View className="bg-[#1e293b] p-5 rounded-3xl border border-slate-700/50 shadow-lg">
             <Text className="text-white font-bold text-lg mb-1">Tùy chọn thông báo</Text>
@@ -265,7 +266,7 @@ export default function SettingsScreen() {
           </View>
         )}
 
-        {/* TAB 3: HỆ THỐNG */}
+        {/* TAB 3: HỆ THỐNG }
         {activeTab === 'system' && (
           <View className="space-y-4">
             <View className="bg-[#1e293b] p-5 rounded-3xl border border-slate-700/50 shadow-lg">
@@ -322,7 +323,7 @@ export default function SettingsScreen() {
           </View>
         )}
 
-        {/* TAB 4: DỮ LIỆU */}
+        {/* TAB 4: DỮ LIỆU }
         {activeTab === 'data' && (
           <View className="space-y-4">
             <View className="bg-[#1e293b] p-5 rounded-3xl border border-slate-700/50 shadow-lg">
@@ -395,3 +396,4 @@ export default function SettingsScreen() {
     </SafeAreaView>
   );
 }
+  */
