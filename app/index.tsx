@@ -68,7 +68,7 @@ export default function Index() {
         
         {/* Tên App */}
         <Text className="text-white text-4xl font-extrabold tracking-widest">
-          MYLONG<Text className="text-sky-500">AI</Text>
+          LANG<Text className="text-sky-500">AI</Text>
         </Text>
         
         {/* Slogan nhỏ */}
