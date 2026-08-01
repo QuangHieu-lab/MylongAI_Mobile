@@ -1,3 +1,4 @@
+/*
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -60,7 +61,7 @@ export default function RiskManagementScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#0f172a]" edges={['top']}>
       
-      {/* ================= HEADER ================= */}
+      {/* ================= HEADER ================= }
       <View className="flex-row items-center justify-between px-6 py-4 border-b border-slate-800/50">
         <View className="flex-row items-center gap-3">
           <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 bg-[#1e293b] rounded-full flex items-center justify-center border border-slate-700">
@@ -76,7 +77,7 @@ export default function RiskManagementScreen() {
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
         
-        {/* ================= THỐNG KÊ (STATS) ================= */}
+        {/* ================= THỐNG KÊ (STATS) ================= }
         <View className="flex-row flex-wrap justify-between gap-y-4 mb-8">
           <View className="w-[48%] bg-[#1e293b] p-4 rounded-[24px] border border-slate-700/50 shadow-lg">
             <View className="flex-row justify-between items-start mb-2">
@@ -113,7 +114,7 @@ export default function RiskManagementScreen() {
           </View>
         </View>
 
-        {/* ================= CÁC MẺ RỦI RO CAO (HIGH RISK) ================= */}
+        {/* ================= CÁC MẺ RỦI RO CAO (HIGH RISK) ================= }
         {highRiskBatches.length > 0 && (
           <View className="mb-8">
             <View className="flex-row items-center gap-2 mb-4">
@@ -150,10 +151,10 @@ export default function RiskManagementScreen() {
           </View>
         )}
 
-        {/* ================= DANH SÁCH CẢNH BÁO (TABS) ================= */}
+        {/* ================= DANH SÁCH CẢNH BÁO (TABS) ================= }
         <View className="bg-[#1e293b] rounded-[32px] border border-slate-700/50 overflow-hidden shadow-lg mb-8">
           
-          {/* Custom Tabs List */}
+          {/* Custom Tabs List }
           <View className="flex-row bg-[#0f172a] p-1 m-2 rounded-2xl border border-slate-800">
             <TouchableOpacity 
               onPress={() => setActiveTab('active')}
@@ -173,7 +174,7 @@ export default function RiskManagementScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Nội dung Tab */}
+          {/* Nội dung Tab }
           <View className="p-4">
             {activeTab === 'active' ? (
               // HIỂN THỊ ACTIVE ALERTS
@@ -258,3 +259,4 @@ export default function RiskManagementScreen() {
     </SafeAreaView>
   );
 }
+*/

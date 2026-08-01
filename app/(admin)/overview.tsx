@@ -98,7 +98,7 @@ export default function AdminOverviewScreen() {
           </TouchableOpacity>
           <View>
             <Text className="text-white text-xl font-bold">Tổng quan hệ thống</Text>
-            <Text className="text-slate-400 text-xs mt-0.5">Trạng thái vận hành MyLongAI</Text>
+            <Text className="text-slate-400 text-xs mt-0.5">Trạng thái vận hành LANGAI</Text>
           </View>
         </View>
         

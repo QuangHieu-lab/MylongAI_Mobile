@@ -35,7 +35,7 @@ export default function AdminDashboardScreen() {
             <Activity size={24} color="#ffffff" />
           </View>
           <View>
-            <Text className="text-white text-2xl font-bold tracking-tight">MYLONGAI</Text>
+            <Text className="text-white text-2xl font-bold tracking-tight">LANGAI</Text>
             <Text className="text-cyan-400 text-sm font-semibold tracking-wider uppercase mt-0.5">Admin Dashboard</Text>
           </View>
         </View>

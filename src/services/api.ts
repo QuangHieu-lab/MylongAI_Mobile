@@ -47,7 +47,10 @@ export const authApi = {
   login: (data: any) => apiClient.post('/auth/login', data),
   register: (data: any) => apiClient.post('/auth/register', data),
   getMe: () => apiClient.get('/auth/profile'),
+  forgotPassword: (data: { email: string }) => apiClient.post('/auth/forgot', data),
+  resetPassword: (data: { token: string; new_password: string }) => apiClient.post('/auth/reset', data),
 };
+
 // --- CAMERA MANAGEMENT ---
 export const cameraApi = {
   create: (data: any) => apiClient.post('/camera', data),

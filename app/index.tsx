@@ -126,7 +126,7 @@ export default function Index() {
         <View className="w-8 h-8 bg-sky-500 rounded-lg items-center justify-center">
           <BarChart3 size={18} color="#0A0E27" />
         </View>
-        <Text className="text-white font-bold text-xl tracking-widest">MYLONGAI</Text>
+        <Text className="text-white font-bold text-xl tracking-widest">LANGAI</Text>
       </View>
 
       <ScrollView
