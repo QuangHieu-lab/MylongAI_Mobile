@@ -3,12 +3,15 @@ import { useState } from 'react';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { AUTH_MESSAGES } from '@/src/constants/messages';
 import { toast } from '@/src/lib/toast';
+import { authApi } from '@/src/services/api'; // 🚀 Nhớ import authApi
 
 export const useAuthForm = () => {
   const { login, register } = useAuth(); 
   
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  // 🚀 Thêm trạng thái 'forgot' vào tab
+  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'forgot'>('login');
   const [isLoading, setIsLoading] = useState(false);
+  const [isForgotLoading, setIsForgotLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const [loginEmail, setLoginEmail] = useState('');
@@ -16,6 +19,9 @@ export const useAuthForm = () => {
   const [registerName, setRegisterName] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
+  
+  // 🚀 State cho phần Quên mật khẩu
+  const [forgotEmail, setForgotEmail] = useState('');
 
   const togglePassword = () => setShowPassword(prev => !prev);
 
@@ -30,7 +36,6 @@ export const useAuthForm = () => {
       await login(loginEmail, loginPassword);
       toast.success('Thành công', AUTH_MESSAGES.SUCCESS_LOGIN); 
     } catch (error: any) {
-      // 🚀 Bóc tách lỗi từ Axios (FastAPI thường trả lỗi trong trường 'detail')
       const errorMessage = error.response?.data?.detail 
                         || error.response?.data?.message 
                         || error.message 
@@ -57,7 +62,6 @@ export const useAuthForm = () => {
       setRegisterPassword('');
       setActiveTab('login');
     } catch (error: any) {
-      // 🚀 Bóc tách lỗi trùng email từ Backend
       const errorMessage = error.response?.data?.detail 
                         || error.response?.data?.message 
                         || error.message 
@@ -69,15 +73,41 @@ export const useAuthForm = () => {
     }
   };
 
+  // 🚀 Hàm xử lý Gửi yêu cầu Khôi phục mật khẩu
+  const handleForgotPassword = async () => {
+    if (!forgotEmail) {
+      toast.error('Lỗi', 'Vui lòng nhập email của bạn.');
+      return;
+    }
+
+    setIsForgotLoading(true);
+    try {
+      await authApi.forgotPassword({ email: forgotEmail });
+      toast.success('Đã gửi yêu cầu', 'Nếu email tồn tại, bạn sẽ nhận được hướng dẫn.');
+      
+      setActiveTab('login'); // Quay lại trang đăng nhập sau khi gửi
+      setForgotEmail(''); // Reset form
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.detail 
+                        || error.response?.data?.message 
+                        || error.message 
+                        || 'Có lỗi xảy ra, vui lòng thử lại.';
+      toast.error('Lỗi', errorMessage);
+    } finally {
+      setIsForgotLoading(false);
+    }
+  };
+
   return {
     activeTab, setActiveTab,
-    isLoading,
+    isLoading, isForgotLoading, // Trả thêm state loading
     showPassword, togglePassword,
     loginEmail, setLoginEmail,
     loginPassword, setLoginPassword,
     registerName, setRegisterName,
     registerEmail, setRegisterEmail,
     registerPassword, setRegisterPassword,
-    handleLogin, handleRegister
+    forgotEmail, setForgotEmail, // Trả thêm state email quên MK
+    handleLogin, handleRegister, handleForgotPassword // Trả thêm hàm
   };
 };

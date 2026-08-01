@@ -68,7 +68,7 @@ export default function RegisterScreen() {
             </View>
             <View className="justify-center">
               <View className="flex-row items-center gap-2">
-                <Text className="text-2xl font-bold text-white tracking-tight">MYLONGAI</Text>
+                <Text className="text-2xl font-bold text-white tracking-tight">LANGAI</Text>
                 <View className="flex-row items-center gap-1 px-1.5 py-0.5 bg-cyan-400/20 border border-cyan-400/30 rounded-md">
                   <Sparkles size={10} color="#22d3ee" />
                   <Text className="text-[10px] font-bold text-cyan-400">AI</Text>
@@ -177,7 +177,7 @@ export default function RegisterScreen() {
 
             {/* Điều khoản */}
             <Text className="text-center text-xs text-slate-500 mt-6">
-              Bằng cách đăng ký, bạn đồng ý với <Text className="text-cyan-500 underline">Điều khoản</Text> và <Text className="text-cyan-500 underline">Chính sách bảo mật</Text> của MYLONGAI
+              Bằng cách đăng ký, bạn đồng ý với <Text className="text-cyan-500 underline">Điều khoản</Text> và <Text className="text-cyan-500 underline">Chính sách bảo mật</Text> của LANGAI
             </Text>
 
           </View>

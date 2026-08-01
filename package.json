@@ -46,6 +46,7 @@
     "expo-splash-screen": "~55.0.13",
     "expo-status-bar": "~55.0.4",
     "expo-system-ui": "~55.0.16",
+    "expo-updates": "~55.0.26",
     "livekit-client": "^2.20.1",
     "lucide-react-native": "^0.545.0",
     "moti": "^0.30.0",

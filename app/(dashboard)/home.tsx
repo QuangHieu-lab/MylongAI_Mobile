@@ -80,9 +80,8 @@ export default function HomeScreen() {
           {/* Header Top Bar */}
           <View className="flex-row justify-between items-center mb-10 z-10">
             <View className="flex-row items-center gap-2">
-              <Text className="text-white font-extrabold text-xl tracking-wider">MYLONGAI</Text>
+              <Text className="text-white font-extrabold text-xl tracking-wider">LANGAI</Text>
               <View className="bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">
-                <Text className="text-emerald-400 text-[10px] font-bold tracking-widest">PRO</Text>
               </View>
             </View>
             

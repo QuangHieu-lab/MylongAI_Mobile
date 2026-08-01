@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, Text, ScrollView, useWindowDimensions, TouchableOpacity,
-  Modal, SafeAreaView, RefreshControl, TextInput, KeyboardAvoidingView, Platform 
+  Modal, SafeAreaView, RefreshControl, ActivityIndicator 
 } from 'react-native';
 import { 
   Thermometer, Droplets, Clock, CircleDot, Maximize, 
-  Minimize, ChevronRight, Bell, X, CheckCircle, 
-  Info, AlertTriangle, CloudRain, ChevronLeft,
-  Camera, WifiOff, MapPin, Plus, Link, Loader2, Scan, TrendingUp, XCircle
+  Minimize, ChevronRight, CloudRain, ChevronLeft,
+  Camera, WifiOff, MapPin, Scan, XCircle
 } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
@@ -21,10 +20,6 @@ import { useYoloVision } from '@/src/hooks/useYoloVision';
 
 import { cameraApi, sensorApi, detectionApi, predictionApi, weatherApi } from '@/src/services/api'; 
 
-const INITIAL_HISTORY = [
-  { id: '1', time: '13:00', message: 'Hệ thống AI Vision đã khởi động', type: 'success' },
-];
-
 const AI_URL = 'https://huntrot-mylongai-backed-modelai.hf.space';
 
 export default function CameraMonitoringScreen() {
@@ -37,17 +32,12 @@ export default function CameraMonitoringScreen() {
   const [videoTrack, setVideoTrack] = useState<any>(null);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   
   const [cameras, setCameras] = useState<any[]>([]);
   const [selectedCam, setSelectedCam] = useState<any>(null);
 
-  const [isAddCamModalOpen, setIsAddCamModalOpen] = useState(false);
-  const [newCamData, setNewCamData] = useState({ name: '', location: '', ip: '' });
-
   const [weatherData, setWeatherData] = useState({ temp: 34.0, hum: 58.0, rainLabel: '', isRaining: false });
   const [predictionData, setPredictionData] = useState({ dryness: 0, minutesLeft: 0 });
-  const [logs, setLogs] = useState(INITIAL_HISTORY);
   
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -152,24 +142,6 @@ export default function CameraMonitoringScreen() {
     } catch (error) {
       console.error("Lỗi khi chuyển camera:", error);
       Toast.show({ type: 'error', text1: 'Lỗi LiveKit', text2: 'Không thể thiết lập luồng kết nối.', position: 'top' });
-    }
-  };
-
-  const handleConnectCamera = async () => {
-    if (!newCamData.name || !newCamData.ip) {
-      Toast.show({ type: 'error', text1: 'Lỗi', text2: 'Vui lòng nhập tên và IP Camera!', position: 'top' });
-      return;
-    }
-    try {
-      await cameraApi.create({
-        name: newCamData.name, location: newCamData.location || 'Khu vực mới', stream_url: newCamData.ip, status: 'online'
-      });
-      Toast.show({ type: 'success', text1: 'Đã lưu Camera', text2: 'Camera đã được thêm vào hệ thống!', position: 'top' });
-      setIsAddCamModalOpen(false);
-      setNewCamData({ name: '', location: '', ip: '' }); 
-      fetchCameras(); 
-    } catch (e) {
-      Toast.show({ type: 'error', text1: 'Lỗi máy chủ', text2: 'Không thể thêm camera lúc này.', position: 'top' });
     }
   };
 
@@ -394,8 +366,9 @@ export default function CameraMonitoringScreen() {
             <VideoView style={{ width: '100%', height: '100%' }} videoTrack={videoTrack} objectFit="contain" />
           ) : (
             <View className="items-center justify-center">
-              <Loader2 size={40} color="#22d3ee" className="animate-spin" />
-              <Text className="text-cyan-400 mt-2 font-bold">Đang tải luồng Video...</Text>
+              {/* 🚀 Đã thay đổi thành ActivityIndicator của React Native */}
+              <ActivityIndicator size="large" color="#22d3ee" />
+              <Text className="text-cyan-400 mt-4 font-bold">Đang tải luồng Video...</Text>
             </View>
           )
         ) : (
@@ -458,10 +431,7 @@ export default function CameraMonitoringScreen() {
             </View>
             <Text className="text-cyan-500/80 text-xs font-bold uppercase tracking-widest mt-1">XƯỞNG PHƠI MỸ LỒNG</Text>
           </View>
-          <TouchableOpacity onPress={() => setIsNotificationModalOpen(true)} className="p-2.5 bg-slate-800 rounded-full border border-slate-700 shadow-sm relative">
-            <Bell size={20} color="#e2e8f0" />
-            {weatherData.rainLabel ? <View className="absolute top-1.5 right-1.5 w-3 h-3 bg-rose-500 rounded-full border-2 border-slate-800" /> : null}
-          </TouchableOpacity>
+          {/* Đã xóa nút chuông thông báo ở đây */}
         </View>
 
         <DataWrapper isLoading={isLoading} error={error} onRetry={fetchCameras} loadingMessage="Đang kết nối đến hệ thống CCTV AI...">
@@ -503,13 +473,7 @@ export default function CameraMonitoringScreen() {
                   </View>
                 </TouchableOpacity>
               ))}
-              <TouchableOpacity
-                onPress={() => setIsAddCamModalOpen(true)}
-                className="mr-5 p-3 rounded-[20px] border border-dashed border-slate-600 bg-slate-800/30 flex-row items-center justify-center min-w-[140px] shadow-sm"
-              >
-                <Plus size={20} color="#94a3b8" />
-                <Text className="text-slate-400 font-bold ml-2 text-sm">Thêm Camera</Text>
-              </TouchableOpacity>
+              {/* Đã xóa nút "Thêm Camera" ở đây */}
             </ScrollView>
           </View>
 
@@ -614,46 +578,9 @@ export default function CameraMonitoringScreen() {
       </ScrollView>
 
       {/* ========================================================================= */}
-      {/* 7️⃣ MODALS GIỮ NGUYÊN */}
+      {/* 7️⃣ CHỈ GIỮ LẠI MODAL FULLSCREEN */}
       {/* ========================================================================= */}
       
-      <Modal visible={isNotificationModalOpen} animationType="slide" transparent={true} onRequestClose={() => setIsNotificationModalOpen(false)}>
-        <View className="flex-1 justify-end bg-black/60">
-          <View className="bg-[#1e293b] h-[80%] rounded-t-3xl border-t border-slate-700 p-6 shadow-2xl">
-            <View className="flex-row justify-between items-center mb-6">
-              <Text className="text-white text-xl font-bold">Lịch sử & Cảnh báo</Text>
-              <TouchableOpacity onPress={() => setIsNotificationModalOpen(false)} className="w-8 h-8 bg-slate-800 rounded-full items-center justify-center border border-slate-700">
-                <X size={20} color="#94a3b8" />
-              </TouchableOpacity>
-            </View>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text className="text-slate-400 font-bold uppercase tracking-wider text-xs mb-4 ml-1">Lịch sử mẻ bánh</Text>
-              <View className="pl-3">
-                {logs.map((item) => {
-                  let Icon = Info; let colorClass = 'text-blue-400'; let bgClass = 'bg-blue-500/10 border-blue-500/20';
-                  if (item.type === 'success') { Icon = CheckCircle; colorClass = 'text-emerald-400'; bgClass = 'bg-emerald-500/10 border-emerald-500/20'; } 
-                  else if (item.type === 'warning') { Icon = AlertTriangle; colorClass = 'text-amber-400'; bgClass = 'bg-amber-500/10 border-amber-500/20'; }
-                  return (
-                    <View key={item.id} className="relative pl-6 pb-6 border-l border-slate-700 last:border-0 last:pb-0">
-                      <View className="absolute -left-[9px] top-0 bg-[#1e293b] p-0.5">
-                        <View className={`w-4 h-4 rounded-full border-2 ${item.type === 'success' ? 'border-emerald-500 bg-emerald-900' : item.type === 'warning' ? 'border-amber-500 bg-amber-900' : 'border-blue-500 bg-blue-900'}`} />
-                      </View>
-                      <View className={`p-4 rounded-2xl border ${bgClass} ml-2 shadow-sm`}>
-                        <View className="flex-row items-center gap-2 mb-1.5">
-                          <Icon size={14} color={item.type === 'success' ? '#34d399' : item.type === 'warning' ? '#fbbf24' : '#60a5fa'} />
-                          <Text className={`${colorClass} font-bold text-xs`}>{item.time}</Text>
-                        </View>
-                        <Text className="text-slate-300 text-sm leading-5">{item.message}</Text>
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
       <Modal visible={isFullscreen} animationType="fade" transparent={false} onRequestClose={() => setIsFullscreen(false)}>
         <SafeAreaView className="flex-1 bg-black">
           <View className="absolute top-12 left-0 right-0 z-50 flex-row justify-between items-start px-6 pointer-events-box-none">
@@ -670,57 +597,6 @@ export default function CameraMonitoringScreen() {
             {renderCameraContent(true)}
           </View>
         </SafeAreaView>
-      </Modal>
-
-      <Modal visible={isAddCamModalOpen} animationType="fade" transparent={true} onRequestClose={() => setIsAddCamModalOpen(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 justify-center items-center bg-black/70 px-6">
-          <View className="bg-[#1e293b] w-full max-w-md rounded-3xl border border-slate-700 p-6 shadow-2xl">
-            <View className="flex-row justify-between items-center mb-6">
-              <Text className="text-white text-xl font-bold">Thêm Camera Mới</Text>
-              <TouchableOpacity onPress={() => setIsAddCamModalOpen(false)} className="p-2 bg-slate-800 rounded-full">
-                <X size={20} color="#94a3b8" />
-              </TouchableOpacity>
-            </View>
-            <View className="mb-4">
-              <Text className="text-slate-400 font-bold text-xs mb-2 ml-1">TÊN CAMERA</Text>
-              <TextInput 
-                className="bg-slate-800 text-white p-4 rounded-2xl border border-slate-700 focus:border-cyan-500"
-                placeholder="VD: Sân Phơi Khu B"
-                placeholderTextColor="#64748b"
-                value={newCamData.name}
-                onChangeText={(text) => setNewCamData({...newCamData, name: text})}
-              />
-            </View>
-            <View className="mb-4">
-              <Text className="text-slate-400 font-bold text-xs mb-2 ml-1">VỊ TRÍ / KHU VỰC</Text>
-              <TextInput 
-                className="bg-slate-800 text-white p-4 rounded-2xl border border-slate-700 focus:border-cyan-500"
-                placeholder="VD: Khu lưu trữ"
-                placeholderTextColor="#64748b"
-                value={newCamData.location}
-                onChangeText={(text) => setNewCamData({...newCamData, location: text})}
-              />
-            </View>
-            <View className="mb-6">
-              <Text className="text-slate-400 font-bold text-xs mb-2 ml-1">ĐỊA CHỈ IP / RTSP STREAM URL</Text>
-              <View className="flex-row items-center bg-slate-800 rounded-2xl border border-slate-700 focus:border-cyan-500 px-4">
-                <Link size={18} color="#64748b" />
-                <TextInput 
-                  className="flex-1 text-white p-4 ml-2"
-                  placeholder="rtsp://192.168.1.10/stream"
-                  placeholderTextColor="#64748b"
-                  keyboardType="url"
-                  autoCapitalize="none"
-                  value={newCamData.ip}
-                  onChangeText={(text) => setNewCamData({...newCamData, ip: text})}
-                />
-              </View>
-            </View>
-            <TouchableOpacity onPress={handleConnectCamera} className="bg-cyan-600 p-4 rounded-full items-center justify-center shadow-lg shadow-cyan-900">
-              <Text className="text-white font-bold text-base tracking-wide">Kết nối Camera</Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
       </Modal>
 
     </>

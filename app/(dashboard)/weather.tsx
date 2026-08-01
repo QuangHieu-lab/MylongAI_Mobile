@@ -8,7 +8,7 @@ import {
 import { LineChart } from 'react-native-chart-kit';
 import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
-
+import { VoiceNotification } from '@/src/components/dashboard/VoiceNotification';
 // 🚀 IMPORT DATA WRAPPER VÀ HOOK
 import DataWrapper from '@/src/components/ui/DataWrapper';
 import { useWeather } from '@/src/hooks/useWeather';
@@ -138,17 +138,15 @@ export default function WeatherScreen() {
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#38bdf8" colors={['#38bdf8']} />}
       >
         {/* --- HEADER --- */}
-        <View className="mb-6 mt-2 flex-row justify-between items-center">
-          <View>
-            <Text className="text-white text-3xl font-bold tracking-tight">Thời tiết xưởng</Text>
-            <Text className="text-slate-400 text-sm mt-1">Phân tích tự động bởi AI và Cảm biến</Text>
-          </View>
-          
-          <TouchableOpacity className="flex-row items-center gap-2 bg-cyan-500/10 px-4 py-2 rounded-xl border border-cyan-500/30 shadow-lg shadow-cyan-500/20">
-            <CloudLightning className="w-4 h-4 text-cyan-400" />
-            <Text className="text-cyan-400 font-bold text-sm">Nghe AI</Text>
-          </TouchableOpacity>
-        </View>
+       <View className="mb-6 mt-2 flex-row justify-between items-center">
+  <View>
+    <Text className="text-white text-3xl font-bold tracking-tight">Thời tiết xưởng</Text>
+    <Text className="text-slate-400 text-sm mt-1">Phân tích tự động bởi AI và Cảm biến</Text>
+  </View>
+  
+  {/* 🚀 ĐẶT COMPONENT VOICE VÀO ĐÂY */}
+  <VoiceNotification />
+</View>
 
         <DataWrapper isLoading={loading && !isRefreshing} error={error} onRetry={refetch} loadingMessage="Đang đồng bộ AI...">
           
