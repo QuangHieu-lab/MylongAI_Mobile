@@ -250,7 +250,7 @@ export default function PremiumScreen() {
             <View className="bg-[#0f172a] rounded-2xl p-4 border border-slate-800 mb-4 flex-row justify-between items-center shadow-inner">
               <Text className="text-slate-300 font-medium">Từ tháng 3:</Text>
               <View className="items-end">
-                <Text className="font-extrabold text-xl text-cyan-400">399.000đ</Text>
+                <Text className="font-extrabold text-xl text-cyan-400">499.000đ</Text>
                 <Text className="text-slate-500 text-[10px]">/tháng</Text>
               </View>
             </View>

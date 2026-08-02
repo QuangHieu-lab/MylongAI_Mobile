@@ -60,7 +60,7 @@ export default function LoginScreen() {
                 </View>
                 <View className="justify-center">
                   <View className="flex-row items-center gap-2">
-                    <Text className="text-3xl font-bold text-white tracking-tight">MYLONGAI</Text>
+                    <Text className="text-3xl font-bold text-white tracking-tight">LANGAI</Text>
                     <View className="flex-row items-center gap-1 px-2 py-0.5 bg-[#0ea5e9]/20 border border-[#0ea5e9]/30 rounded-md">
                       <Sparkles size={12} color="#38bdf8" />
                       <Text className="text-xs font-bold text-[#38bdf8]">AI</Text>
