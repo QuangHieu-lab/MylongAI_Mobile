@@ -8,7 +8,7 @@ import {
 import { LineChart } from 'react-native-chart-kit';
 import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
-import { VoiceNotification } from '@/src/components/dashboard/VoiceNotification';
+
 // 🚀 IMPORT DATA WRAPPER VÀ HOOK
 import DataWrapper from '@/src/components/ui/DataWrapper';
 import { useWeather } from '@/src/hooks/useWeather';
@@ -145,7 +145,6 @@ export default function WeatherScreen() {
   </View>
   
   {/* 🚀 ĐẶT COMPONENT VOICE VÀO ĐÂY */}
-  <VoiceNotification />
 </View>
 
         <DataWrapper isLoading={loading && !isRefreshing} error={error} onRetry={refetch} loadingMessage="Đang đồng bộ AI...">

@@ -158,31 +158,7 @@ export default function HomeScreen() {
              
 
               {/* 4. CARD AI VOICE ALERT */}
-              <TouchableOpacity 
-                onPress={() => router.push('/(dashboard)/voice' as any)}
-                className="w-full bg-[#1e293b] p-5 rounded-3xl border border-slate-700/50 shadow-lg mt-1 relative overflow-hidden"
-              >
-                <View className="absolute -right-10 -top-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl" />
-                <View className="flex-row justify-between items-start mb-4 z-10">
-                  <View className="bg-indigo-500/20 p-3 rounded-2xl border border-indigo-500/30">
-                    <Mic size={24} color="#818cf8" />
-                  </View>
-                  <ChevronRight size={18} color="#64748b" />
-                </View>
-                <Text className="text-white font-bold text-xl mb-1 z-10">Cảnh báo Giọng nói</Text>
-                <Text className="text-slate-400 text-sm mb-4 z-10">AI Voice Assistant tự động</Text>
-                <View className="flex-row items-center gap-3 z-10">
-                  <View className="flex-row items-center gap-1.5 bg-indigo-500/10 px-3 py-1.5 rounded-lg border border-indigo-500/30">
-                    <Volume2 size={14} color="#818cf8" />
-                    <Text className="text-indigo-400 text-xs font-bold uppercase tracking-wider">Đang bật</Text>
-                  </View>
-                  <View className="flex-row items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-                    <Radio size={14} color="#94a3b8" />
-                    <Text className="text-slate-300 text-xs font-semibold">4 thông báo chờ</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-
+             
             </View>
           </DataWrapper>
           
